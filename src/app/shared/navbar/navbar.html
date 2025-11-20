@@ -1,0 +1,28 @@
+<nav class="w-full bg-[#021359] shadow-sm">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    
+    <!-- Left: Logo -->
+    <h1 class="text-2xl font-semibold text-white">
+      Library Manager
+    </h1>
+
+    <!-- Right: Actions -->
+    <div class="flex items-center gap-10">
+      <ng-container *ngIf="authService.isAuthenticated()">
+        <a routerLink="/home" 
+           class="text-white hover:text-gray-200 font-medium">
+          Catalog
+        </a>
+        <a routerLink="/dashboard" 
+           class="text-white hover:text-gray-200 font-medium">
+          User Dashboard
+        </a>
+        <button (click)="handleLogout()"
+                class="px-4 py-2 bg-white text-[#021359] rounded-md hover:bg-gray-100 transition">
+          Logout
+        </button>
+      </ng-container>
+    </div>
+
+  </div>
+</nav>

@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Montserrat', sans-serif;
+  }
+  
+  /* Override PrimeNG theme to preserve your custom colors */
+  html {
+    --primary-color: #021359;
+    --primary-color-text: #ffffff;
+    --surface-ground: #f9fafb;
+  }
+}

@@ -1,0 +1,113 @@
+<div class="home-header px-2 py-6 max-w-7xl mx-auto " role="banner" aria-label="Home header">
+    <h1 class="book-catalog" style="font-size:3rem; margin:0;">Book Catalog</h1>
+    <h2 class="tagline" style="font-size:1rem; color:#555; margin-top:0.5rem;">
+        Discover and borrow from our collection below
+    </h2>
+</div>
+<!-- ...existing code... -->
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <!-- search + controls -->
+  <div class="flex gap-3 items-center mb-6">
+    <div class="flex-1">
+      <input
+        type="text"
+        placeholder="Search by title or author..."
+        class="w-full px-4 py-2 border rounded-md focus:outline-none"
+        (input)="onSearch($event)"
+        [value]="search()"
+      />
+    </div>
+
+    <!-- Filter -->
+    <div class="relative">
+      <button
+        (click)="showFilter.set(!showFilter())"
+        class="px-3 py-2 bg-white border rounded-md shadow-sm"
+      >
+        Filter
+      </button>
+
+      <div *ngIf="showFilter()" class="absolute right-0 mt-2 w-56 bg-white border rounded-md shadow-lg p-3 z-10">
+        <div class="font-semibold mb-2">Filter by genre</div>
+        <div *ngFor="let g of genres()" class="flex items-center gap-2 mb-1">
+          <input 
+            type="checkbox" 
+            [id]="'genre-' + g"
+            [checked]="selectedGenres().includes(g)" 
+            (change)="toggleGenre(g)"
+            class="cursor-pointer"      
+          />
+          <label [for]="'genre-' + g" class="text-sm cursor-pointer">{{ g }}</label>
+        </div>
+        <div class="mt-3 flex justify-between">
+          <button class="text-sm text-gray-600" (click)="selectedGenres.set([])">Clear</button>
+          <button class="text-sm text-blue-600" (click)="showFilter.set(false)">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sort -->
+    <div class="relative">
+      <button (click)="showSort.set(!showSort())" class="px-3 py-2 bg-white border rounded-md shadow-sm">
+        Sort
+      </button>
+
+      <div *ngIf="showSort()" class="absolute right-0 mt-2 w-56 bg-white border rounded-md shadow-lg p-3 z-10">
+        <div class="font-semibold mb-2">Sort By</div>
+        <button class="block w-full text-left py-1 text-sm" (click)="setSort('authorAsc')">Author ↑</button>
+        <button class="block w-full text-left py-1 text-sm" (click)="setSort('authorDesc')">Author ↓</button>
+        <button class="block w-full text-left py-1 text-sm" (click)="setSort('titleAsc')">Title ↑</button>
+        <button class="block w-full text-left py-1 text-sm" (click)="setSort('titleDesc')">Title ↓</button>
+      </div>
+    </div>
+
+    <button class="px-3 py-2 bg-gray-100 border rounded-md" (click)="clearFilters()">Reset</button>
+  </div>
+
+  <!-- results -->
+  <div class="mb-4 text-sm text-gray-600">
+    Showing {{ filteredBooks().length }} result(s)
+  </div>
+
+  <ng-template #noResults>
+    <div class="text-center text-gray-500">No books found.</div>
+  </ng-template>
+</div>
+<div class="card max-w-7xl mx-auto px-4 py-6">
+    <p-table
+        [value]="filteredBooks()"
+        [paginator]="true"
+        [rows]="5"
+        [tableStyle]="{ 'min-width': '50rem' }"
+        [rowsPerPageOptions]="[5, 10, 20]"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th class="border-b border-gray-200 px-4 py-2" style="width:25%">id</th>
+                <th class="border-b border-gray-200 px-4 py-2" style="width:25%">title</th>
+                <th pSortableColumn="author" class="border-b border-gray-200 px-4 py-2" style="width:25%">Author</th>
+                <th class="border-b border-gray-200 px-4 py-2" style="width:25%">genre</th>
+                <th class="border-b border-gray-200 px-4 py-2 text-right" style="width:10%">Actions</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-book>
+            <tr class="hover:bg-gray-50">
+                <td class="border-b border-gray-100 px-4 py-2">{{ book.id }}</td>
+                <td class="border-b border-gray-100 px-4 py-2">{{ book.title }}</td>
+                <td class="border-b border-gray-100 px-4 py-2">{{ book.author }}</td>
+                <td class="border-b border-gray-100 px-4 py-2">{{ book.genre }}</td>
+                <td class="border-b border-gray-100 px-4 py-2">
+                    <button
+                    type="button"
+                    class="px-3 py-1 bg-[#021359] text-white rounded-md hover:opacity-90"
+                    (click)="onRowAction(book)"
+                  >
+                    View
+                  </button>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+<!-- ...existing code... -->

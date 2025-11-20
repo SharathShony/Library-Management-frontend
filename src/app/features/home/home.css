@@ -1,0 +1,6 @@
+/* Home component styles */
+/* ...existing code... */
+.home-header { margin-bottom: 1rem; }
+
+/* ensure dropdowns appear above content */
+.relative .z-10 { z-index: 50; }
