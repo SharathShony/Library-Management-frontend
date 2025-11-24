@@ -1,35 +1,44 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../shared/services/auth.service';
+import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-login',
-  imports: [RouterLink],
+  imports: [RouterLink, NgIf],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class Login {
   private auth = inject(AuthService);
   private router = inject(Router);
+  
+  errorMessage = signal('');
+  isLoading = signal(false);
 
   onSubmit(event: Event, email: string, password: string) {
     event.preventDefault();
-    console.log('Form submitted!', { email, password });
     
-    // Accept any email and password for now (demo mode)
     if (!email || !password) {
-      console.log('Email or password is empty');
+      this.errorMessage.set('Please enter email and password');
       return;
     }
     
-    // Create a demo token
-    const fakeToken = btoa(`${email}:${Date.now()}`);
-    console.log('Generated token:', fakeToken);
+    this.isLoading.set(true);
+    this.errorMessage.set('');
     
-    this.auth.login(fakeToken);
-    console.log('Auth state after login:', this.auth.isAuthenticated());
-    
-    this.router.navigate(['/home']);
-    console.log('Navigation triggered to /home');
+    // Call the real API
+    this.auth.loginWithApi({ email, password }).subscribe({
+      next: (response) => {
+        console.log('Login successful:', response);
+        this.isLoading.set(false);
+        this.router.navigate(['/home']);
+      },
+      error: (error) => {
+        console.error('Login failed:', error);
+        this.isLoading.set(false);
+        this.errorMessage.set(error.error?.message || 'Login failed. Please try again.');
+      }
+    });
   }
 }

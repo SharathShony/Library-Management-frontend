@@ -83,21 +83,23 @@
     >
         <ng-template pTemplate="header">
             <tr>
-                <th class="border-b border-gray-200 px-4 py-2" style="width:25%">id</th>
-                <th class="border-b border-gray-200 px-4 py-2" style="width:25%">title</th>
-                <th pSortableColumn="author" class="border-b border-gray-200 px-4 py-2" style="width:25%">Author</th>
-                <th class="border-b border-gray-200 px-4 py-2" style="width:25%">genre</th>
-                <th class="border-b border-gray-200 px-4 py-2 text-right" style="width:10%">Actions</th>
+                <th pSortableColumn="title" class="border-b border-gray-200 px-2 py-2" style="width:20%">Title</th>
+                <th pSortableColumn="author" class="border-b border-gray-200 px-2 py-2" style="width:20%">Author</th>
+                <th pSortableColumn="genre" class="border-b border-gray-200 px-2 py-2" style="width:20%">Genre</th>
+                <th pSortableColumn="publisher" class="border-b border-gray-200 px-2 py-2" style="width:20%">Publisher</th>
+                <th pSortableColumn="availability" class="border-b border-gray-200 px-2 py-2" style="width:20%">Availability</th>
+                <th class="border-b border-gray-200 px-2 py-2" style="width:10%">Actions</th>
             </tr>
         </ng-template>
 
         <ng-template pTemplate="body" let-book>
             <tr class="hover:bg-gray-50">
-                <td class="border-b border-gray-100 px-4 py-2">{{ book.id }}</td>
-                <td class="border-b border-gray-100 px-4 py-2">{{ book.title }}</td>
-                <td class="border-b border-gray-100 px-4 py-2">{{ book.author }}</td>
-                <td class="border-b border-gray-100 px-4 py-2">{{ book.genre }}</td>
-                <td class="border-b border-gray-100 px-4 py-2">
+                <td class="border-b border-gray-100 px-2 py-2">{{ book.title }}</td>
+                <td class="border-b border-gray-100 px-2 py-2">{{ book.author }}</td>
+                <td class="border-b border-gray-100 px-2 py-2">{{ book.genre }}</td>
+                <td class="border-b border-gray-100 px-2 py-2">{{ book.publisher }}</td>
+                <td class="border-b border-gray-100 px-2 py-2">{{ book.availability }}</td>
+                <td class="border-b border-gray-100 px-2 py-2">
                     <button
                     type="button"
                     class="px-3 py-1 bg-[#021359] text-white rounded-md hover:opacity-90"
