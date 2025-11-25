@@ -30,11 +30,8 @@ export class Home implements OnInit {
     
     this.bookService.getCatalog().subscribe({
       next: (books) => {
-        console.log('Raw books data:', books);
-        console.log('First book categories:', books[0]?.categories);
         this.booksSignal.set(books);
         this.isLoading.set(false);
-        console.log('Books loaded:', books);
       },
       error: (error) => {
         console.error('Error loading books:', error);
@@ -48,10 +45,9 @@ export class Home implements OnInit {
   genres = computed(() => {
     const allGenres = this.booksSignal()
       .flatMap(b => Array.isArray(b.categories) ? b.categories : [b.categories])
-      .filter(g => g && g.length > 0); // Remove empty strings
+      .filter(g => g && g.length > 0);
     
     const uniqueGenres = Array.from(new Set(allGenres)).sort();
-    console.log('Available genres:', uniqueGenres);
     return uniqueGenres;
   });
   
@@ -73,7 +69,6 @@ export class Home implements OnInit {
         return genres.some(selectedGenre => bookGenres.includes(selectedGenre));
       });
     }
-    console.log('Books after filtering:', list);
     return list;
   });
 

@@ -9,13 +9,12 @@ interface LoginRequest {
 }
 
 interface LoginResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-  };
+  message: string;
+  userId: string;
+  username: string;
+  email: string;
+  role: string;
+  token?: string | null;
 }
 
 interface DecodedToken {
@@ -57,9 +56,21 @@ export class AuthService {
   loginWithApi(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/Auth/login`, credentials).pipe(
       tap(response => {
-        this.storeAuthData(response.token, response.user);
+        // Create user object from backend response
+        const user = {
+          id: response.userId,
+          email: response.email,
+          name: response.username,
+          username: response.username,
+          role: response.role
+        };
+        
+        // Use token if provided, otherwise use a placeholder (you may need to get JWT from backend)
+        const token = response.token || 'temp-token-' + Date.now();
+        
+        this.storeAuthData(token, user);
         this.isAuthenticatedSignal.set(true);
-        this.userSignal.set(response.user);
+        this.userSignal.set(user);
       })
     );
   }
