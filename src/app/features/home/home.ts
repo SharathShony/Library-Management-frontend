@@ -1,63 +1,82 @@
-import { Component,signal,computed } from '@angular/core';
+import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgForOf, NgIf } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
-
-
-interface Book {
-  id: string;
-  title: string;
-  author: string;
-  genre: string;
-}
+import { BookService, Book } from '../../shared/services/book.service';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink,NgForOf,NgIf,ButtonModule,TableModule],
+  imports: [RouterLink, NgForOf, NgIf, ButtonModule, TableModule],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home {
-    private booksSignal = signal<Book[]>([
-    { id: '1', title: 'Angular Essentials', author: 'Jane Doe', genre: 'Programming' },
-    { id: '2', title: 'TypeScript Deep Dive', author: 'John Smith', genre: 'Programming' },
-    { id: '3', title: 'Mystery of the Library', author: 'A. Writer', genre: 'Fiction' },
-    { id: '4', title: 'Cooking 101', author: 'Chef Good', genre: 'Cooking' },
-    { id: '5', title: 'Modern Poetry', author: 'L. Poet', genre: 'Poetry' },
-  ]);
+export class Home implements OnInit {
+  private bookService = inject(BookService);
+  private booksSignal = signal<Book[]>([]);
   search = signal('');
   selectedGenres = signal<string[]>([]);
-  sortOption = signal<string | null>(null);
   showFilter = signal(false);
-  showSort = signal(false);
+  isLoading = signal(false);
+  errorMessage = signal<string | null>(null);
+
+  ngOnInit() {
+    this.loadBooks();
+  }
+
+  loadBooks() {
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    
+    this.bookService.getCatalog().subscribe({
+      next: (books) => {
+        console.log('Raw books data:', books);
+        console.log('First book categories:', books[0]?.categories);
+        this.booksSignal.set(books);
+        this.isLoading.set(false);
+        console.log('Books loaded:', books);
+      },
+      error: (error) => {
+        console.error('Error loading books:', error);
+        this.errorMessage.set('Failed to load books. Please try again.');
+        this.isLoading.set(false);
+      }
+    });
+  }
 
   // derived data
   genres = computed(() => {
-    const set = new Set(this.booksSignal().map(b => b.genre));
-    console.log('Available genres:', Array.from(set).sort());
-    return Array.from(set).sort();
+    const allGenres = this.booksSignal()
+      .flatMap(b => Array.isArray(b.categories) ? b.categories : [b.categories])
+      .filter(g => g && g.length > 0); // Remove empty strings
+    
+    const uniqueGenres = Array.from(new Set(allGenres)).sort();
+    console.log('Available genres:', uniqueGenres);
+    return uniqueGenres;
   });
   
   filteredBooks = computed(() => {
     let list = this.booksSignal();
     const q = this.search().trim().toLowerCase();
     if (q) {
-      list = list.filter(b => b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q));
+      list = list.filter(b => {
+        const authorString = Array.isArray(b.authors) ? b.authors.join(' ') : b.authors;
+        return b.title.toLowerCase().includes(q) || 
+               authorString.toLowerCase().includes(q);
+      });
     }
     const genres = this.selectedGenres();
     if (genres.length) {
-      list = list.filter(b => genres.includes(b.genre));
+      list = list.filter(b => {
+        // Handle categories as an array
+        const bookGenres = Array.isArray(b.categories) ? b.categories : [b.categories];
+        return genres.some(selectedGenre => bookGenres.includes(selectedGenre));
+      });
     }
     console.log('Books after filtering:', list);
-    const s = this.sortOption();
-    if (s === 'authorAsc') list = [...list].sort((a, b) => a.author.localeCompare(b.author));
-    if (s === 'authorDesc') list = [...list].sort((a, b) => b.author.localeCompare(a.author));
-    if (s === 'titleAsc') list = [...list].sort((a, b) => a.title.localeCompare(b.title));
-    if (s === 'titleDesc') list = [...list].sort((a, b) => b.title.localeCompare(a.title));
-
     return list;
   });
+
   onSearch(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.search.set(value);
@@ -71,15 +90,11 @@ export class Home {
     this.selectedGenres.set(arr);
   }
 
-  setSort(option: string) {
-    this.sortOption.set(option);
-    this.showSort.set(false);
-  }
   clearFilters() {
     this.search.set('');
     this.selectedGenres.set([]);
-    this.sortOption.set(null);
   }
+
   onRowAction(book: Book) {
     console.log('Row action clicked for book:', book);
     // Example: navigate to book detail

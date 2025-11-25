@@ -4,8 +4,22 @@
         Discover and borrow from our collection below
     </h2>
 </div>
-<!-- ...existing code... -->
-<div class="max-w-7xl mx-auto px-4 py-6">
+
+<!-- Error Message -->
+<div *ngIf="errorMessage()" class="max-w-7xl mx-auto px-4 mb-4">
+  <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+    <span class="block sm:inline">{{ errorMessage() }}</span>
+    <button (click)="loadBooks()" class="ml-4 underline">Retry</button>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="isLoading()" class="max-w-7xl mx-auto px-4 py-6 text-center">
+  <div class="text-gray-600">Loading books...</div>
+</div>
+
+<!-- Main Content -->
+<div *ngIf="!isLoading()" class="max-w-7xl mx-auto px-4 py-6">
   <!-- search + controls -->
   <div class="flex gap-3 items-center mb-6">
     <div class="flex-1">
@@ -44,22 +58,7 @@
           <button class="text-sm text-blue-600" (click)="showFilter.set(false)">Done</button>
         </div>
       </div>
-    </div>
-
-    <!-- Sort -->
-    <div class="relative">
-      <button (click)="showSort.set(!showSort())" class="px-3 py-2 bg-white border rounded-md shadow-sm">
-        Sort
-      </button>
-
-      <div *ngIf="showSort()" class="absolute right-0 mt-2 w-56 bg-white border rounded-md shadow-lg p-3 z-10">
-        <div class="font-semibold mb-2">Sort By</div>
-        <button class="block w-full text-left py-1 text-sm" (click)="setSort('authorAsc')">Author ↑</button>
-        <button class="block w-full text-left py-1 text-sm" (click)="setSort('authorDesc')">Author ↓</button>
-        <button class="block w-full text-left py-1 text-sm" (click)="setSort('titleAsc')">Title ↑</button>
-        <button class="block w-full text-left py-1 text-sm" (click)="setSort('titleDesc')">Title ↓</button>
-      </div>
-    </div>
+    </div>    
 
     <button class="px-3 py-2 bg-gray-100 border rounded-md" (click)="clearFilters()">Reset</button>
   </div>
@@ -73,7 +72,8 @@
     <div class="text-center text-gray-500">No books found.</div>
   </ng-template>
 </div>
-<div class="card max-w-7xl mx-auto px-4 py-6">
+
+<div *ngIf="!isLoading()" class="card max-w-7xl mx-auto px-4 py-6">
     <p-table
         [value]="filteredBooks()"
         [paginator]="true"
@@ -95,10 +95,10 @@
         <ng-template pTemplate="body" let-book>
             <tr class="hover:bg-gray-50">
                 <td class="border-b border-gray-100 px-2 py-2">{{ book.title }}</td>
-                <td class="border-b border-gray-100 px-2 py-2">{{ book.author }}</td>
-                <td class="border-b border-gray-100 px-2 py-2">{{ book.genre }}</td>
+                <td class="border-b border-gray-100 px-2 py-2">{{ book.authors.join(', ') }}</td>
+                <td class="border-b border-gray-100 px-2 py-2">{{ book.categories.join(', ') }}</td>
                 <td class="border-b border-gray-100 px-2 py-2">{{ book.publisher }}</td>
-                <td class="border-b border-gray-100 px-2 py-2">{{ book.availability }}</td>
+                <td class="border-b border-gray-100 px-2 py-2">{{ book.isAvailable ? 'Available' : 'Not Available' }}</td>
                 <td class="border-b border-gray-100 px-2 py-2">
                     <button
                     type="button"
@@ -112,4 +112,3 @@
         </ng-template>
     </p-table>
 </div>
-<!-- ...existing code... -->
