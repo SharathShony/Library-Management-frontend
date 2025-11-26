@@ -1,11 +1,11 @@
 import { Component, inject, OnInit, computed } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, NgIf],
+  imports: [RouterLink, RouterLinkActive, NgIf],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
