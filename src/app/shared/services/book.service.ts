@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';  // Changed from @angular/common
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Book {
@@ -30,6 +30,11 @@ export interface BookDetails {
   updatedAt: string;
 }
 
+export interface BorrowResponse {
+  availableCopies: number;
+  borrowingId: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -44,5 +49,12 @@ export class BookService {
 
   getBookDetails(bookId: string): Observable<BookDetails> {
     return this.http.get<BookDetails>(`${this.apiUrl}/${bookId}/details`);
+  }
+
+  // POST /api/Books/{bookId}/borrow
+  borrowBook(bookId: string, userId: string, dueDate?: string): Observable<BorrowResponse> {
+    const body: any = { userId };
+    if (dueDate) body.dueDate = dueDate;
+    return this.http.post<BorrowResponse>(`${this.apiUrl}/${bookId}/borrow`, body);
   }
 }

@@ -227,11 +227,13 @@
   <ng-template pTemplate="footer">
     <div class="flex justify-end gap-3 w-full">
       <button 
-        *ngIf="selectedBook()?.isAvailable && !isLoadingDetails() && !detailsError()"
+        *ngIf="selectedBook()?.isAvailable && !isLoadingDetails()"
         pButton 
         label="Borrow Book" 
-        icon="pi pi-book" 
-        (click)="closeModal()"
+        icon="pi pi-book"
+        (click)="onBorrowBook()"
+        [disabled]="isBorrowing()"
+        [loading]="isBorrowing()"
         class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md transition-all duration-200"
       ></button>
     </div>

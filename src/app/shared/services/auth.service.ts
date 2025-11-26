@@ -78,6 +78,9 @@ export class AuthService {
   private storeAuthData(token: string, user: any) {
     localStorage.setItem('authToken', token);
     localStorage.setItem('userData', JSON.stringify(user));
+    
+    // ADD THIS LINE - Store userId in sessionStorage for borrowing
+    sessionStorage.setItem('userId', user.id);
   }
 
   login(token: string) {
@@ -88,6 +91,7 @@ export class AuthService {
   logout(navigate = true) {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
+    sessionStorage.removeItem('userId'); // ADD THIS LINE
     
     this.isAuthenticatedSignal.set(false);
     this.userSignal.set(null);

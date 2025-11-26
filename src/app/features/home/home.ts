@@ -1,5 +1,5 @@
 import { Component, signal, computed, OnInit, inject } from '@angular/core';
-import { NgForOf, NgIf, DatePipe } from '@angular/common';  // Added DatePipe
+import { NgForOf, NgIf, DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
@@ -7,7 +7,7 @@ import { BookService, Book, BookDetails } from '../../shared/services/book.servi
 
 @Component({
   selector: 'app-home',
-  imports: [NgForOf, NgIf, ButtonModule, TableModule, DialogModule, DatePipe],  // Added DatePipe
+  imports: [NgForOf, NgIf, ButtonModule, TableModule, DialogModule, DatePipe],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
@@ -20,11 +20,12 @@ export class Home implements OnInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   
-  // Modal states - CHANGED TYPE FROM Book TO BookDetails
+  // Modal states
   showBookModal = signal(false);
   selectedBook = signal<BookDetails | null>(null);
-  isLoadingDetails = signal(false);  // ADDED THIS
-  detailsError = signal<string | null>(null);  // ADDED THIS
+  isLoadingDetails = signal(false);
+  detailsError = signal<string | null>(null);
+  isBorrowing = signal(false);
 
   ngOnInit() {
     this.loadBooks();
@@ -47,7 +48,6 @@ export class Home implements OnInit {
     });
   }
 
-  // derived data
   genres = computed(() => {
     const allGenres = this.booksSignal()
       .flatMap(b => Array.isArray(b.categories) ? b.categories : [b.categories])
@@ -95,7 +95,6 @@ export class Home implements OnInit {
     this.selectedGenres.set([]);
   }
 
-  // ADDED THIS METHOD
   onRowAction(book: Book) {
     console.log('Opening modal for book:', book);
     this.showBookModal.set(true);
@@ -104,9 +103,10 @@ export class Home implements OnInit {
     this.selectedBook.set(null);
 
     console.log('Fetching details for book ID:', book.bookId);
+
     this.bookService.getBookDetails(book.bookId).subscribe({
       next: (details) => {
-        console.log('Book details received:', details);
+        console.log('Book details loaded:', details);
         this.selectedBook.set(details);
         this.isLoadingDetails.set(false);
       },
@@ -118,11 +118,66 @@ export class Home implements OnInit {
     });
   }
 
-  // ADDED THIS METHOD
   closeModal() {
     this.showBookModal.set(false);
     this.selectedBook.set(null);
     this.detailsError.set(null);
     this.isLoadingDetails.set(false);
+  }
+
+  onBorrowBook() {
+    const book = this.selectedBook();
+    if (!book) return;
+
+    // Get userId from sessionStorage (set during login)
+    const userId = sessionStorage.getItem('userId');
+    
+    if (!userId) {
+      this.detailsError.set('Please log in to borrow books.');
+      return;
+    }
+    
+    console.log('Attempting to borrow with userId:', userId);
+    console.log('Book ID:', book.bookId);
+    
+    this.isBorrowing.set(true);
+    this.detailsError.set(null);
+
+    this.bookService.borrowBook(book.bookId, userId).subscribe({
+      next: (response) => {
+        console.log('Borrow successful:', response);
+        
+        // Update the book details with new available copies
+        const updatedBook = {
+          ...book,
+          availableCopies: response.availableCopies,
+          isAvailable: response.availableCopies > 0
+        };
+        this.selectedBook.set(updatedBook);
+
+        // Update the catalog list
+        this.booksSignal.set(
+          this.booksSignal().map(b => 
+            b.bookId === book.bookId 
+              ? { ...b, isAvailable: response.availableCopies > 0 }
+              : b
+          )
+        );
+
+        this.isBorrowing.set(false);
+        // Optionally show success message or close modal
+      },
+      error: (error) => {
+        console.error('Borrow failed:', error);
+        console.error('Error status:', error.status);
+        console.error('Error body:', error.error);
+        console.error('Error message:', error.error?.message || error.message);
+        
+        // Display the actual error message from the server
+        const errorMsg = error.error?.message || error.error || 'Failed to borrow book. Please try again.';
+        this.detailsError.set(errorMsg);
+        this.isBorrowing.set(false);
+      }
+    });
   }
 }
