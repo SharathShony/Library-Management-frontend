@@ -1,0 +1,39 @@
+<div class="home-header px-2 py-6 max-w-7xl mx-auto " role="banner" aria-label="Home header">
+    <h1 class="book-catalog" style="font-size:3rem; margin:0;">Hi, {{ userName }}</h1>
+    <h2 class="tagline" style="color:#555; margin-top:0.5rem;">
+        Manage your borrowed books and borrowing history
+    </h2>
+</div>
+
+<div class="px-2 py-6 max-w-7xl mx-auto">
+  <div class="flex flex-wrap gap-10">
+    <p-card header="Currently Borrowed" class="flex-1 min-w-[150px] max-h-32 overflow-auto border border-gray-300">
+      <p class="m-0 text-3xl font-extrabold text-black">
+        2
+      </p>
+    </p-card>
+    <p-card header="Total Books Read" class="flex-1 min-w-[150px] max-h-32 overflow-auto border border-gray-300">
+      <p class="m-0 text-3xl font-extrabold text-black">
+        3
+      </p>
+    </p-card>
+    <p-card header="Books Overdue" class="flex-1 min-w-[150px] max-h-32 overflow-auto border border-gray-300">
+      <p class="m-0 text-3xl font-extrabold text-black">
+        1
+      </p>
+    </p-card>
+  </div>
+  <div class="px-2 py-8 max-w-7xl mx-auto card flex flex-col gap-4">
+    <p-selectbutton [options]="stateOptions" [(ngModel)]="value" optionLabel="label" optionValue="value" class="w-[28rem]" />
+    <div class="panel bg-white rounded shadow p-4 mt-4 min-h-[120px]">
+      <div *ngIf="value === 'currently-borrowed'">
+        <h3 class="text-lg font-bold mb-2">Currently Borrowed Books</h3>
+        <p>List of books you are currently borrowing will appear here.</p>
+      </div>
+      <div *ngIf="value === 'borrowing-history'">
+        <h3 class="text-lg font-bold mb-2">Borrowing History</h3>
+        <p>Your borrowing history will appear here.</p>
+      </div>
+    </div>
+  </div>
+</div>
