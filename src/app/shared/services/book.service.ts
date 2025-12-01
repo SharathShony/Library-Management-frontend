@@ -35,6 +35,16 @@ export interface BorrowResponse {
   borrowingId: string;
 }
 
+export interface BorrowedBook {
+  borrowingId: string;
+  bookId: string;
+  bookTitle: string;
+  author: string;
+  borrowDate: string;
+  dueDate: string;
+  isOverdue: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -57,4 +67,24 @@ export class BookService {
     if (dueDate) body.dueDate = dueDate;
     return this.http.post<BorrowResponse>(`${this.apiUrl}/${bookId}/borrow`, body);
   }
+  getCurrentlyBorrowedCount(userId: string) {
+  return this.http.get<{ count: number }>(
+    `https://localhost:7159/api/Borrowings/currently-borrowed/count?userId=${userId}`
+  );
+}
+getReturnedBooksCount(userId: string) {
+  return this.http.get<{ count: number }>(
+    `https://localhost:7159/api/Borrowings/returned/count?userId=${userId}`
+  );
+}
+getOverdueBooksCount(userId: string) {
+  return this.http.get<{ count: number }>(
+    `https://localhost:7159/api/Borrowings/overdue/count?userId=${userId}`
+  );
+}
+getCurrentlyBorrowedBooks(userId: string): Observable<BorrowedBook[]> {
+  return this.http.get<BorrowedBook[]>(
+    `https://localhost:7159/api/Borrowings/currently-borrowed?userId=${userId}`
+  );
+}
 }
