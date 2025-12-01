@@ -34,7 +34,9 @@
         </div>
 
         <div class="space-y-4">
-          <div *ngFor="let book of currentlyBorrowedBooks" class="bg-gray-50 rounded shadow p-4 flex items-center justify-between border border-gray-200">
+          <div *ngFor="let book of currentlyBorrowedBooks" 
+               class="bg-gray-50 rounded shadow p-4 flex items-center justify-between border border-gray-200 cursor-pointer hover:shadow-lg transition"
+               (click)="openBookDetails(book)">
             <!-- Left: Book Info -->
             <div class="flex-1">
               <h4 class="text-base font-semibold text-gray-800">{{ book.bookTitle }}</h4>
@@ -55,7 +57,7 @@
             </div>
 
             <!-- Right: Action Buttons -->
-            <div class="flex gap-2">
+            <div class="flex gap-2" (click)="$event.stopPropagation()">
               <button 
                 class="px-4 py-2 bg-[#040c33] text-white rounded hover:bg-[#021359] transition"
                 (click)="returnBook(book.borrowingId)"
@@ -80,3 +82,61 @@
     </div>
   </div>
 </div>
+
+<!-- Book Details Modal -->
+<p-dialog 
+  [(visible)]="showBookDetailsModal" 
+  [modal]="true" 
+  [closable]="true"
+  [style]="{width: '50vw'}"
+  [breakpoints]="{'960px': '75vw', '640px': '95vw'}"
+  header="Book Details">
+  
+  <div *ngIf="selectedBook" class="space-y-4">
+    <div>
+      <h3 class="text-2xl font-bold text-gray-800">{{ selectedBook.bookTitle }}</h3>
+      <p class="text-lg italic text-gray-600 mt-1">by {{ selectedBook.author }}</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <span class="font-semibold">ISBN:</span> {{ selectedBook.isbn || 'N/A' }}
+      </div>
+      <div>
+        <span class="font-semibold">Publisher:</span> {{ selectedBook.publisher || 'N/A' }}
+      </div>
+      <div>
+        <span class="font-semibold">Borrowed:</span> {{ selectedBook.borrowDate | date }}
+      </div>
+      <div>
+        <span class="font-semibold">Due Date:</span> {{ selectedBook.dueDate | date }}
+      </div>
+    </div>
+
+    <div *ngIf="selectedBook.isOverdue" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <strong>⚠️ This book is overdue!</strong> Please return it as soon as possible.
+    </div>
+
+    <div>
+      <h4 class="font-semibold mb-2">Summary:</h4>
+      <p class="text-gray-700">{{ selectedBook.summary || 'No summary available.' }}</p>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button 
+      *ngIf="selectedBook"
+      class="px-4 py-2 bg-[#040c33] text-white rounded hover:bg-[#021359] transition"
+      (click)="returnBook(selectedBook.borrowingId); showBookDetailsModal = false"
+    >
+      Return Book
+    </button>
+    <button 
+      *ngIf="selectedBook"
+      class="px-4 py-2 bg-[#073bb8] text-white rounded hover:bg-[#021359] transition"
+      (click)="extendBook(selectedBook.borrowingId); showBookDetailsModal = false"
+    >
+      Extend Due Date
+    </button>
+  </ng-template>
+</p-dialog>

@@ -3,6 +3,7 @@ import { CardModule } from 'primeng/card';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SelectButton } from 'primeng/selectbutton';
+import { DialogModule } from 'primeng/dialog';
 import { BookService, BorrowedBook } from '../../shared/services/book.service';
 import { OnInit } from '@angular/core';
 
@@ -10,7 +11,7 @@ import { OnInit } from '@angular/core';
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css'],
-  imports: [CommonModule, CardModule, FormsModule, SelectButton],
+  imports: [CommonModule, CardModule, FormsModule, SelectButton, DialogModule],
 })
 export class Dashboard implements OnInit {
   userName: string = 'User';
@@ -24,6 +25,10 @@ export class Dashboard implements OnInit {
   overdueBooksCount: number = 0; 
   currentlyBorrowedBooks: BorrowedBook[] = [];
   userId: string = '';
+  
+  // Modal state
+  showBookDetailsModal: boolean = false;
+  selectedBook: BorrowedBook | null = null;
 
   get value(): string {
     return this._value;
@@ -99,9 +104,54 @@ export class Dashboard implements OnInit {
     }
   }
 
+  openBookDetails(book: BorrowedBook) {
+    this.selectedBook = book;
+    this.showBookDetailsModal = true;
+  }
+
   returnBook(borrowingId: string) {
-    console.log('Return book:', borrowingId);
-    // TODO: Call API to return book
+    if (!confirm('Are you sure you want to return this book?')) {
+      return;
+    }
+
+    console.log('Attempting to return book with borrowingId:', borrowingId); // ADD THIS
+
+    this.bookService.returnBook(borrowingId).subscribe({
+      next: (response) => {
+        console.log('Book returned successfully:', response);
+        
+        // Refresh the borrowed books list
+        this.loadCurrentlyBorrowedBooks();
+        
+        // Refresh the dashboard counts
+        if (this.userId) {
+          this.bookService.getCurrentlyBorrowedCount(this.userId).subscribe({
+            next: (res) => this.currentlyBorrowedCount = res.count,
+            error: () => this.currentlyBorrowedCount = 0
+          });
+
+          this.bookService.getReturnedBooksCount(this.userId).subscribe({
+            next: (res) => this.totalBooksRead = res.count,
+            error: () => this.totalBooksRead = 0
+          });
+
+          this.bookService.getOverdueBooksCount(this.userId).subscribe({
+            next: (res) => this.overdueBooksCount = res.count,
+            error: () => this.overdueBooksCount = 0
+          });
+        }
+        
+        // Close modal if open
+        this.showBookDetailsModal = false;
+      },
+      error: (error) => {
+        console.error('Failed to return book:', error);
+        console.error('Error status:', error.status); // ADD THIS
+        console.error('Error message:', error.error); // ADD THIS
+        console.error('Error details:', error.message); // ADD THIS
+        alert(error?.error?.message || 'Failed to return book. Please try again.');
+      }
+    });
   }
 
   extendBook(borrowingId: string) {
