@@ -1,35 +1,80 @@
-<div class="home-header px-2 py-6 max-w-7xl mx-auto " role="banner" aria-label="Home header">
+<!-- <div class="home-header px-2 py-6 max-w-7xl mx-auto " role="banner" aria-label="Home header">
     <h1 class="book-catalog" style="font-size:3rem; margin:0;">Hi, {{ userName }}</h1>
     <h2 class="tagline" style="color:#555; margin-top:0.5rem;">
         Manage your borrowed books and borrowing history
     </h2>
-</div>
+</div> -->
 
 <div class="px-2 py-6 max-w-7xl mx-auto">
   <div class="flex flex-wrap gap-10">
     <p-card header="Currently Borrowed" class="flex-1 min-w-[150px] max-h-32 overflow-auto border border-gray-300">
       <p class="m-0 text-3xl font-extrabold text-black">
-        2
+        {{ currentlyBorrowedCount }}
       </p>
     </p-card>
-    <p-card header="Total Books Read" class="flex-1 min-w-[150px] max-h-32 overflow-auto border border-gray-300">
+    <p-card header="Total Books Returned" class="flex-1 min-w-[150px] max-h-32 overflow-auto border border-gray-300">
       <p class="m-0 text-3xl font-extrabold text-black">
-        3
+        {{ totalBooksRead }}
       </p>
     </p-card>
     <p-card header="Books Overdue" class="flex-1 min-w-[150px] max-h-32 overflow-auto border border-gray-300">
-      <p class="m-0 text-3xl font-extrabold text-black">
-        1
+      <p class="m-0 text-3xl font-extrabold text-red-600">
+        {{ overdueBooksCount }}
       </p>
     </p-card>
   </div>
   <div class="px-2 py-8 max-w-7xl mx-auto card flex flex-col gap-4">
     <p-selectbutton [options]="stateOptions" [(ngModel)]="value" optionLabel="label" optionValue="value" class="w-[28rem]" />
-    <div class="panel bg-white rounded shadow p-4 mt-4 min-h-[120px]">
+    <div class="panel bg-white rounded shadow p-4 mt-4 max-h-[400px] overflow-y-auto">
       <div *ngIf="value === 'currently-borrowed'">
-        <h3 class="text-lg font-bold mb-2">Currently Borrowed Books</h3>
-        <p>List of books you are currently borrowing will appear here.</p>
+        <h3 class="text-lg font-bold mb-4">Currently Borrowed Books</h3>
+        
+        <div *ngIf="currentlyBorrowedBooks.length === 0" class="text-gray-500">
+          You have no currently borrowed books.
+        </div>
+
+        <div class="space-y-4">
+          <div *ngFor="let book of currentlyBorrowedBooks" 
+               class="bg-gray-50 rounded shadow p-4 flex items-center justify-between border border-gray-200 cursor-pointer hover:shadow-lg transition"
+               (click)="openBookDetails(book)">
+            <!-- Left: Book Info -->
+            <div class="flex-1">
+              <h4 class="text-base font-semibold text-gray-800">{{ book.bookTitle }}</h4>
+              <p class="text-sm italic text-gray-600 mt-1">{{ book.author }}</p>
+              <p class="text-xs text-gray-500 mt-2">
+                <span class="font-medium">Borrowed:</span> {{ book.borrowDate | date }}
+              </p>
+              <p class="text-xs text-gray-500">
+                <span class="font-medium">Due:</span> {{ book.dueDate | date }}
+              </p>
+            </div>
+
+            <!-- Middle: Overdue Warning -->
+            <div class="flex-1 text-center">
+              <p *ngIf="book.isOverdue" class="text-red-600 font-bold text-sm">
+                 OVERDUE
+              </p>
+            </div>
+
+            <!-- Right: Action Buttons -->
+            <div class="flex gap-2" (click)="$event.stopPropagation()">
+              <button 
+                class="px-4 py-2 bg-[#040c33] text-white rounded hover:bg-[#021359] transition"
+                (click)="returnBook(book.borrowingId)"
+              >
+                Return
+              </button>
+              <button 
+                class="px-4 py-2 bg-[#073bb8] text-white rounded hover:bg-[#021359] transition"
+                (click)="extendBook(book.borrowingId)"
+              >
+                Extend
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
       <div *ngIf="value === 'borrowing-history'">
         <h3 class="text-lg font-bold mb-2">Borrowing History</h3>
         <p>Your borrowing history will appear here.</p>
@@ -37,3 +82,61 @@
     </div>
   </div>
 </div>
+
+<!-- Book Details Modal -->
+<p-dialog 
+  [(visible)]="showBookDetailsModal" 
+  [modal]="true" 
+  [closable]="true"
+  [style]="{width: '50vw'}"
+  [breakpoints]="{'960px': '75vw', '640px': '95vw'}"
+  header="Book Details">
+  
+  <div *ngIf="selectedBook" class="space-y-4">
+    <div>
+      <h3 class="text-2xl font-bold text-gray-800">{{ selectedBook.bookTitle }}</h3>
+      <p class="text-lg italic text-gray-600 mt-1">by {{ selectedBook.author }}</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <span class="font-semibold">ISBN:</span> {{ selectedBook.isbn || 'N/A' }}
+      </div>
+      <div>
+        <span class="font-semibold">Publisher:</span> {{ selectedBook.publisher || 'N/A' }}
+      </div>
+      <div>
+        <span class="font-semibold">Borrowed:</span> {{ selectedBook.borrowDate | date }}
+      </div>
+      <div>
+        <span class="font-semibold">Due Date:</span> {{ selectedBook.dueDate | date }}
+      </div>
+    </div>
+
+    <div *ngIf="selectedBook.isOverdue" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <strong>⚠️ This book is overdue!</strong> Please return it as soon as possible.
+    </div>
+
+    <div>
+      <h4 class="font-semibold mb-2">Summary:</h4>
+      <p class="text-gray-700">{{ selectedBook.summary || 'No summary available.' }}</p>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button 
+      *ngIf="selectedBook"
+      class="px-4 py-2 bg-[#040c33] text-white rounded hover:bg-[#021359] transition"
+      (click)="returnBook(selectedBook.borrowingId); showBookDetailsModal = false"
+    >
+      Return Book
+    </button>
+    <button 
+      *ngIf="selectedBook"
+      class="px-4 py-2 bg-[#073bb8] text-white rounded hover:bg-[#021359] transition"
+      (click)="extendBook(selectedBook.borrowingId); showBookDetailsModal = false"
+    >
+      Extend Due Date
+    </button>
+  </ng-template>
+</p-dialog>
