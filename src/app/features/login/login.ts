@@ -30,7 +30,6 @@ export class Login {
     // Call the real API
     this.auth.loginWithApi({ email, password }).subscribe({
       next: (response) => {
-        console.log('Login successful:', response);
         this.isLoading.set(false);
         this.router.navigate(['/home']);
       },

@@ -10,15 +10,20 @@
     <div class="flex items-center gap-10">
       <ng-container *ngIf="authService.isAuthenticated()">
         <a routerLink="/home" 
-           class="text-white hover:text-gray-200 font-medium">
+           routerLinkActive="active-link"
+           [routerLinkActiveOptions]="{exact: true}"
+           class="nav-btn">
           Catalog
         </a>
         <a routerLink="/dashboard" 
-           class="text-white hover:text-gray-200 font-medium">
-          User Dashboard
+           routerLinkActive="active-link"
+           [routerLinkActiveOptions]="{exact: false}"
+           class="nav-btn flex flex-col items-end">
+          <span class="font-bold">{{ userName() }}</span>
+          <span class="text-xs font-thin italic">{{ userRole() }}</span>
         </a>
         <button (click)="handleLogout()"
-                class="px-4 py-2 bg-white text-[#021359] rounded-md hover:bg-gray-100 transition">
+                class="nav-btn">
           Logout
         </button>
       </ng-container>
