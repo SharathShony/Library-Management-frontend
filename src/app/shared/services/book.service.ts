@@ -48,6 +48,21 @@ export interface BorrowedBook {
   summary?: string;
 }
 
+export interface BorrowingHistory {
+  borrowingId: string;
+  bookId: string;
+  bookTitle: string;
+  author: string;
+  borrowDate: string;
+  dueDate: string;
+  returnDate: string;
+  status: string;
+  wasOverdue: boolean;
+  isbn?: string;
+  publisher?: string;
+  summary?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -90,6 +105,12 @@ getCurrentlyBorrowedBooks(userId: string): Observable<BorrowedBook[]> {
     `https://localhost:7159/api/Borrowings/currently-borrowed?userId=${userId}`
   );
 }
+
+getBorrowingHistory(userId: string): Observable<BorrowingHistory[]> {
+  return this.http.get<BorrowingHistory[]>(
+    `https://localhost:7159/api/Borrowings/history?userId=${userId}`
+  );
+}
 returnBook(borrowingId: string) {
   return this.http.post<{
     borrowingId: string;
@@ -98,7 +119,19 @@ returnBook(borrowingId: string) {
     availableCopies: number;
     message: string;
   }>(
-    `https://localhost:7159/api/Borrowings/${borrowingId}/return`, // Changed from ${this.apiUrl} to full URL
+    `https://localhost:7159/api/Borrowings/${borrowingId}/return`,
+    {}
+  );
+}
+
+extendBook(borrowingId: string, extensionDays: number = 7) {
+  return this.http.post<{
+    borrowingId: string;
+    newDueDate: string;
+    extensionDays: number;
+    message: string;
+  }>(
+    `https://localhost:7159/api/Borrowings/${borrowingId}/extend?extensionDays=${extensionDays}`,
     {}
   );
 }
