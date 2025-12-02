@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SelectButton } from 'primeng/selectbutton';
 import { DialogModule } from 'primeng/dialog';
-import { BookService, BorrowedBook } from '../../shared/services/book.service';
+import { BookService, BorrowedBook, BorrowingHistory } from '../../shared/services/book.service';
 import { OnInit } from '@angular/core';
 
 @Component({
@@ -24,6 +24,7 @@ export class Dashboard implements OnInit {
   totalBooksRead: number = 0; 
   overdueBooksCount: number = 0; 
   currentlyBorrowedBooks: BorrowedBook[] = [];
+  borrowingHistory: BorrowingHistory[] = [];
   userId: string = '';
   
   // Modal state
@@ -38,9 +39,11 @@ export class Dashboard implements OnInit {
       this._value = this.stateOptions[0].value;
     } else {
       this._value = val;
-      // Load currently borrowed books when tab is selected
+      // Load data when tab is selected
       if (val === 'currently-borrowed' && this.userId) {
         this.loadCurrentlyBorrowedBooks();
+      } else if (val === 'borrowing-history' && this.userId) {
+        this.loadBorrowingHistory();
       }
     }
   }
@@ -104,6 +107,15 @@ export class Dashboard implements OnInit {
     }
   }
 
+  loadBorrowingHistory() {
+    if (this.userId) {
+      this.bookService.getBorrowingHistory(this.userId).subscribe({
+        next: (history) => this.borrowingHistory = history,
+        error: () => this.borrowingHistory = []
+      });
+    }
+  }
+
   openBookDetails(book: BorrowedBook) {
     this.selectedBook = book;
     this.showBookDetailsModal = true;
@@ -155,7 +167,33 @@ export class Dashboard implements OnInit {
   }
 
   extendBook(borrowingId: string) {
-    console.log('Extend book:', borrowingId);
-    // TODO: Call API to extend due date
+    if (!confirm('Are you sure you want to extend the due date by 7 days?')) {
+      return;
+    }
+
+    this.bookService.extendBook(borrowingId, 7).subscribe({
+      next: (response) => {
+        console.log('Due date extended:', response);
+        
+        // Refresh the borrowed books list to show new due date
+        this.loadCurrentlyBorrowedBooks();
+        
+        // Refresh overdue count in case it changed
+        if (this.userId) {
+          this.bookService.getOverdueBooksCount(this.userId).subscribe({
+            next: (res) => this.overdueBooksCount = res.count,
+            error: () => this.overdueBooksCount = 0
+          });
+        }
+        
+        // Close modal if open
+        this.showBookDetailsModal = false;
+        
+      },
+      error: (error) => {
+        console.error('Failed to extend due date:', error);
+        alert(error?.error?.message || 'Failed to extend due date. Please try again.');
+      }
+    });
   }
 }

@@ -76,8 +76,50 @@
       </div>
 
       <div *ngIf="value === 'borrowing-history'">
-        <h3 class="text-lg font-bold mb-2">Borrowing History</h3>
-        <p>Your borrowing history will appear here.</p>
+        <h3 class="text-lg font-bold mb-4">Borrowing History</h3>
+        
+        <div *ngIf="borrowingHistory.length === 0" class="text-gray-500">
+          No borrowing history found.
+        </div>
+
+        <div class="space-y-4">
+          <div *ngFor="let record of borrowingHistory" 
+               class="bg-gray-50 rounded shadow p-4 border border-gray-200">
+            
+            <!-- Book Info Row -->
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex-1">
+                <h4 class="text-base font-semibold text-gray-800">{{ record.bookTitle }}</h4>
+                <p class="text-sm italic text-gray-600 mt-1">{{ record.author }}</p>
+              </div>
+              <div class="text-right">
+                <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full"
+                      [ngClass]="{
+                        'bg-green-100 text-green-800': record.status === 'Returned' && !record.wasOverdue,
+                        'bg-red-100 text-red-800': record.status === 'Returned' && record.wasOverdue
+                      }">
+                  {{ record.wasOverdue ? 'Returned Late' : 'Returned On Time' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Dates Grid -->
+            <div class="grid grid-cols-3 gap-4 text-xs text-gray-600">
+              <div>
+                <span class="font-medium text-gray-700">Borrowed:</span>
+                <p class="mt-1">{{ record.borrowDate | date }}</p>
+              </div>
+              <div>
+                <span class="font-medium text-gray-700">Due Date:</span>
+                <p class="mt-1">{{ record.dueDate | date }}</p>
+              </div>
+              <div>
+                <span class="font-medium text-gray-700">Returned:</span>
+                <p class="mt-1">{{ record.returnDate | date }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
