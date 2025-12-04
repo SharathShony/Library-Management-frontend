@@ -106,7 +106,6 @@ export class Home implements OnInit {
 
     this.bookService.getBookDetails(book.bookId).subscribe({
       next: (details) => {
-        console.log('Book details loaded:', details);
         this.selectedBook.set(details);
         this.isLoadingDetails.set(false);
       },
@@ -137,16 +136,11 @@ export class Home implements OnInit {
       return;
     }
     
-    console.log('Attempting to borrow with userId:', userId);
-    console.log('Book ID:', book.bookId);
-    
     this.isBorrowing.set(true);
     this.detailsError.set(null);
 
     this.bookService.borrowBook(book.bookId, userId).subscribe({
       next: (response) => {
-        console.log('Borrow successful:', response);
-        
         // Update the book details with new available copies
         const updatedBook = {
           ...book,
@@ -168,11 +162,6 @@ export class Home implements OnInit {
         // Optionally show success message or close modal
       },
       error: (error) => {
-        console.error('Borrow failed:', error);
-        console.error('Error status:', error.status);
-        console.error('Error body:', error.error);
-        console.error('Error message:', error.error?.message || error.message);
-        
         // Display the actual error message from the server
         const errorMsg = error.error?.message || error.error || 'Failed to borrow book. Please try again.';
         this.detailsError.set(errorMsg);

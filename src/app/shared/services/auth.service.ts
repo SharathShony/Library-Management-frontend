@@ -8,6 +8,12 @@ interface LoginRequest {
   password: string;
 }
 
+interface SignupRequest {
+  username: string;
+  email: string;
+  password: string;
+}
+
 interface LoginResponse {
   message: string;
   userId: string;
@@ -15,6 +21,13 @@ interface LoginResponse {
   email: string;
   role: string;
   token?: string | null;
+}
+
+interface SignupResponse {
+  message: string;
+  userId: string;
+  username: string;
+  email: string;
 }
 
 interface DecodedToken {
@@ -34,7 +47,7 @@ export class AuthService {
   isAuthenticated = this.isAuthenticatedSignal.asReadonly();
   currentUser = this.userSignal.asReadonly();
 
-  private apiUrl = 'http://localhost:5164/api'; // Replace with your API URL
+  private apiUrl = 'http://localhost:5164/api'; // Backend HTTP URL
 
   constructor(private http: HttpClient, private router: Router) {
     this.checkAuthStatus();
@@ -65,14 +78,24 @@ export class AuthService {
           role: response.role
         };
         
-        // Use token if provided, otherwise use a placeholder (you may need to get JWT from backend)
-        const token = response.token || 'temp-token-' + Date.now();
+        // Ensure token is present
+        if (!response.token) {
+          console.error('No token received from backend!');
+          throw new Error('Authentication failed: No token received');
+        }
+        
+        const token = response.token;
         
         this.storeAuthData(token, user);
         this.isAuthenticatedSignal.set(true);
         this.userSignal.set(user);
       })
     );
+  }
+
+  // Call your backend signup API
+  signupWithApi(credentials: SignupRequest): Observable<SignupResponse> {
+    return this.http.post<SignupResponse>(`${this.apiUrl}/Auth/signup`, credentials);
   }
 
   private storeAuthData(token: string, user: any) {
