@@ -126,12 +126,8 @@ export class Dashboard implements OnInit {
       return;
     }
 
-    console.log('Attempting to return book with borrowingId:', borrowingId); // ADD THIS
-
     this.bookService.returnBook(borrowingId).subscribe({
       next: (response) => {
-        console.log('Book returned successfully:', response);
-        
         // Refresh the borrowed books list
         this.loadCurrentlyBorrowedBooks();
         
@@ -158,9 +154,6 @@ export class Dashboard implements OnInit {
       },
       error: (error) => {
         console.error('Failed to return book:', error);
-        console.error('Error status:', error.status); // ADD THIS
-        console.error('Error message:', error.error); // ADD THIS
-        console.error('Error details:', error.message); // ADD THIS
         alert(error?.error?.message || 'Failed to return book. Please try again.');
       }
     });
@@ -173,8 +166,6 @@ export class Dashboard implements OnInit {
 
     this.bookService.extendBook(borrowingId, 7).subscribe({
       next: (response) => {
-        console.log('Due date extended:', response);
-        
         // Refresh the borrowed books list to show new due date
         this.loadCurrentlyBorrowedBooks();
         
