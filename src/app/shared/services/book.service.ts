@@ -63,6 +63,33 @@ export interface BorrowingHistory {
   summary?: string;
 }
 
+export interface CreateBookRequest {
+  title: string;
+  subtitle?: string | null;
+  isbn?: string | null;
+  summary?: string | null;
+  publisher?: string | null;
+  publicationDate?: string | null;
+  totalCopies: number;
+  authors: string[];
+  categories: string[];
+}
+
+export interface CreateBookResponse {
+  bookId: string;
+  message: string;
+}
+
+export interface UpdateBookCopiesRequest {
+  totalCopies: number;
+}
+
+export interface UpdateBookCopiesResponse {
+  totalCopies: number;
+  availableCopies: number;
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -134,5 +161,21 @@ extendBook(borrowingId: string, extensionDays: number = 7) {
     `http://localhost:5164/api/Borrowings/${borrowingId}/extend?extensionDays=${extensionDays}`,
     {}
   );
+}
+
+// Admin endpoints
+createBook(request: CreateBookRequest): Observable<CreateBookResponse> {
+  return this.http.post<CreateBookResponse>(`${this.apiUrl}`, request);
+}
+
+updateBookCopies(bookId: string, totalCopies: number): Observable<UpdateBookCopiesResponse> {
+  return this.http.put<UpdateBookCopiesResponse>(
+    `${this.apiUrl}/${bookId}/copies`, 
+    { totalCopies }
+  );
+}
+
+deleteBook(bookId: string): Observable<{ message: string }> {
+  return this.http.delete<{ message: string }>(`${this.apiUrl}/${bookId}`);
 }
 }
