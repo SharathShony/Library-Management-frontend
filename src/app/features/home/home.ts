@@ -1,18 +1,22 @@
 import { Component, signal, computed, OnInit, inject } from '@angular/core';
-import { NgForOf, NgIf, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
-import { BookService, Book, BookDetails } from '../../shared/services/book.service';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { BookService, Book, BookDetails, CreateBookRequest, Category } from '../../shared/services/book.service';
+import { AuthService } from '../../shared/services/auth.service';
 
 @Component({
   selector: 'app-home',
-  imports: [NgForOf, NgIf, ButtonModule, TableModule, DialogModule, DatePipe],
+  imports: [CommonModule, FormsModule, ButtonModule, TableModule, DialogModule, MultiSelectModule],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
 export class Home implements OnInit {
   private bookService = inject(BookService);
+  private authService = inject(AuthService);
   private booksSignal = signal<Book[]>([]);
   search = signal('');
   selectedGenres = signal<string[]>([]);
@@ -26,6 +30,45 @@ export class Home implements OnInit {
   isLoadingDetails = signal(false);
   detailsError = signal<string | null>(null);
   isBorrowing = signal(false);
+  
+  // Admin modal states
+  showAddBookModal = signal(false);
+  showUpdateCopiesModal = signal(false);
+  showDeleteBookModal = signal(false);
+  selectedBookForAdmin = signal<Book | null>(null);
+  newBookCopies = signal<number>(0);
+  
+  // New book form
+  newBookForm = signal<CreateBookRequest>({
+    title: '',
+    subtitle: null,
+    isbn: null,
+    summary: null,
+    publisher: null,
+    publicationDate: null,
+    totalCopies: 1,
+    authors: [],
+    categories: []
+  });
+  newBookAuthorsInput = signal('');
+  newBookCategoriesInput = signal('');
+  
+  // Categories for dropdown
+  availableCategories = signal<Category[]>([]);
+  selectedCategories = signal<Category[]>([]);
+  isLoadingCategories = signal(false);
+  
+  // Notification modal
+  showNotificationModal = signal(false);
+  notificationMessage = signal('');
+  notificationType = signal<'success' | 'error'>('success');
+
+  isTitleChecking = signal(false);
+  titleExists = signal(false);
+  private titleCheckTimeout: any;
+  
+  // Admin check
+  isAdmin = computed(() => this.authService.hasRole('admin'));
 
   ngOnInit() {
     this.loadBooks();
@@ -166,6 +209,180 @@ export class Home implements OnInit {
         const errorMsg = error.error?.message || error.error || 'Failed to borrow book. Please try again.';
         this.detailsError.set(errorMsg);
         this.isBorrowing.set(false);
+      }
+    });
+  }
+
+  // Admin Actions
+  onAddBook() {
+    console.log('Add book clicked');
+    // Reset form
+    this.newBookForm.set({
+      title: '',
+      subtitle: null,
+      isbn: null,
+      summary: null,
+      publisher: null,
+      publicationDate: null,
+      totalCopies: 1,
+      authors: [],
+      categories: []
+    });
+    this.newBookAuthorsInput.set('');
+    this.newBookCategoriesInput.set('');
+    this.selectedCategories.set([]);
+    
+    // Load categories
+    this.isLoadingCategories.set(true);
+    this.bookService.getCategories().subscribe({
+      next: (categories) => {
+        this.availableCategories.set(categories);
+        this.isLoadingCategories.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+        this.isLoadingCategories.set(false);
+        alert('Failed to load categories. Please try again.');
+      }
+    });
+    
+    this.showAddBookModal.set(true);
+  }
+
+  onUpdateBookCopies(book: Book) {
+    console.log('Update book copies clicked for:', book);
+    this.selectedBookForAdmin.set(book);
+    this.newBookCopies.set(0);
+    this.showUpdateCopiesModal.set(true);
+  }
+
+  onDeleteBook(book: Book) {
+    console.log('Delete book clicked for:', book);
+    this.selectedBookForAdmin.set(book);
+    this.showDeleteBookModal.set(true);
+  }
+
+  // Admin modal actions
+  confirmAddBook() {
+    const formData = this.newBookForm();
+    
+    // Parse authors from comma-separated string
+    const authorsInput = this.newBookAuthorsInput().trim();
+    formData.authors = authorsInput ? authorsInput.split(',').map(a => a.trim()).filter(a => a) : [];
+    
+    // Get selected category names from the multiselect
+    const selected = this.selectedCategories();
+    formData.categories = selected.map(cat => cat.name);
+    
+    // Validation
+    if (!formData.title || formData.authors.length === 0 || formData.categories.length === 0) {
+      this.showNotification('Please fill in all required fields (Title, Authors, and Categories)', 'error');
+      return;
+    }
+    
+    this.bookService.createBook(formData).subscribe({
+      next: (response) => {
+        this.showNotification(response.message || 'Book added successfully!', 'success');
+        this.loadBooks(); // Refresh the list
+        this.showAddBookModal.set(false);
+      },
+      error: (error) => {
+        console.error('Error adding book:', error);
+        const errorMsg = error.error?.message || error.message || 'Failed to add book. Please try again.';
+        this.showNotification(errorMsg, 'error');
+      }
+    });
+  }
+
+  confirmUpdateCopies() {
+    const book = this.selectedBookForAdmin();
+    const copies = this.newBookCopies();
+    
+    if (!book) return;
+    
+    if (copies < 0) {
+      this.showNotification('Number of copies cannot be negative', 'error');
+      return;
+    }
+    
+    this.bookService.updateBookCopies(book.bookId, copies).subscribe({
+      next: (response) => {
+        this.showNotification(response.message || 'Book copies updated successfully!', 'success');
+        this.loadBooks(); // Refresh the list
+        this.showUpdateCopiesModal.set(false);
+        this.selectedBookForAdmin.set(null);
+      },
+      error: (error) => {
+        console.error('Error updating book copies:', error);
+        const errorMsg = error.error?.message || error.message || 'Failed to update book copies. Please try again.';
+        this.showNotification(errorMsg, 'error');
+      }
+    });
+  }
+
+  confirmDeleteBook() {
+    const book = this.selectedBookForAdmin();
+    if (book) {
+      this.bookService.deleteBook(book.bookId).subscribe({
+        next: (response) => {
+          this.showNotification(response.message || 'Book deleted successfully!', 'success');
+          this.loadBooks(); // Refresh the list
+          this.showDeleteBookModal.set(false);
+          this.selectedBookForAdmin.set(null);
+        },
+        error: (error) => {
+          console.error('Error deleting book:', error);
+          const errorMsg = error.error?.message || error.message || 'Failed to delete book. Please try again.';
+          this.showNotification(errorMsg, 'error');
+        }
+      });
+    }
+  }
+
+  closeAdminModals() {
+    this.showAddBookModal.set(false);
+    this.showUpdateCopiesModal.set(false);
+    this.showDeleteBookModal.set(false);
+    this.selectedBookForAdmin.set(null);
+  }
+
+  // Notification methods
+  showNotification(message: string, type: 'success' | 'error') {
+    this.notificationMessage.set(message);
+    this.notificationType.set(type);
+    this.showNotificationModal.set(true);
+  }
+
+  closeNotification() {
+    this.showNotificationModal.set(false);
+    this.notificationMessage.set('');
+  }
+  onTitleEntering(event: Event) {
+    const title = (event.target as HTMLInputElement).value.trim();
+    this.newBookForm.update(form => ({ ...form, title }));
+
+    if (!title) {
+      this.titleExists.set(false);
+      return;
+    }
+    if (this.titleCheckTimeout) {
+    clearTimeout(this.titleCheckTimeout);
+  }
+    this.titleCheckTimeout = setTimeout(() => {
+      this.checkBookTitle(title);
+    }, 500);
+  }
+  checkBookTitle(title: string) {
+    this.isTitleChecking.set(true);
+    this.titleExists.set(false);
+    this.bookService.checkBookTitleExists(title).subscribe({
+      next: (response) => {
+        this.titleExists.set(response.exists);
+        this.isTitleChecking.set(false);
+      },
+      error: (error) => {
+        console.error('Error checking book title:', error);
+        this.isTitleChecking.set(false);
       }
     });
   }

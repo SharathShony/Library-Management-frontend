@@ -6,13 +6,14 @@ import { providePrimeNG } from 'primeng/config';
 import { routes } from './app.routes';
 import Aura from '@primeuix/themes/aura';
 import { authInterceptor } from './shared/interceptors/auth.interceptor';
+import { tokenExpiryInterceptor } from './shared/interceptors/token-expiry.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, tokenExpiryInterceptor])),
     provideAnimationsAsync(),
     providePrimeNG({
       theme: {
