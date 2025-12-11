@@ -90,11 +90,21 @@ export interface UpdateBookCopiesResponse {
   message: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+}
+export interface CheckBookTitleResponse{
+  exists: boolean;
+  message?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class BookService {
   private apiUrl = 'http://localhost:5164/api/Books';
+  private categoriesApiUrl = 'http://localhost:5164/api/Categories';
 
   constructor(private http: HttpClient) {}
 
@@ -177,5 +187,13 @@ updateBookCopies(bookId: string, totalCopies: number): Observable<UpdateBookCopi
 
 deleteBook(bookId: string): Observable<{ message: string }> {
   return this.http.delete<{ message: string }>(`${this.apiUrl}/${bookId}`);
+}
+
+// Categories endpoint
+getCategories(): Observable<Category[]> {
+  return this.http.get<Category[]>(this.categoriesApiUrl);
+}
+checkBookTitleExists(title: string): Observable<CheckBookTitleResponse> {
+  return this.http.get<CheckBookTitleResponse>(`${this.apiUrl}/check-title?title=${encodeURIComponent(title)}`);
 }
 }
