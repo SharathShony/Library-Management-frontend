@@ -99,6 +99,29 @@ export interface CheckBookTitleResponse{
   message?: string;
 }
 
+export interface OverdueUser {
+  userId: string;
+  userName: string;
+  email: string;
+  overdueCount: number;
+}
+
+export interface OverdueBookDetail {
+  borrowingId: string;
+  bookId: string;
+  bookTitle: string;
+  borrowedDate: string;
+  dueDate: string;
+  daysOverdue: number;
+}
+
+export interface UserOverdueDetails {
+  userId: string;
+  userName: string;
+  email: string;
+  overdueBooks: OverdueBookDetail[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -195,5 +218,15 @@ getCategories(): Observable<Category[]> {
 }
 checkBookTitleExists(title: string): Observable<CheckBookTitleResponse> {
   return this.http.get<CheckBookTitleResponse>(`${this.apiUrl}/check-title?title=${encodeURIComponent(title)}`);
+}
+
+// Admin: Get users with overdue books
+getOverdueUsers(): Observable<OverdueUser[]> {
+  return this.http.get<OverdueUser[]>('http://localhost:5164/api/Admin/overdue-users');
+}
+
+// Admin: Get overdue books for a specific user
+getUserOverdueBooks(userId: string): Observable<UserOverdueDetails> {
+  return this.http.get<UserOverdueDetails>(`http://localhost:5164/api/Admin/overdue-books/${userId}`);
 }
 }

@@ -75,7 +75,13 @@
 
 <!-- Admin Actions -->
 <div *ngIf="!isLoading() && isAdmin()" class="max-w-7xl mx-auto px-4 mb-4">
-  <div class="flex justify-end">
+  <div class="flex justify-end gap-3">
+    <button 
+      (click)="onViewOverdueBooks()"
+      class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 font-medium"
+    >
+      📋 View Overdue Books
+    </button>
     <button 
       (click)="onAddBook()"
       class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
@@ -558,5 +564,179 @@
       class="text-white px-4 py-2 rounded-lg font-medium">
       OK
     </button>
+  </ng-template>
+</p-dialog>
+
+<!-- Overdue Users Modal -->
+<p-dialog 
+  [(visible)]="showOverdueUsersModal" 
+  header="Users with Overdue Books"
+  [modal]="true"
+  [style]="{width: '70vw'}"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="closeOverdueModals()"
+>
+  <!-- Loading State -->
+  <div *ngIf="isLoadingOverdue()" class="text-center py-8">
+    <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+    <p class="mt-4 text-gray-600">Loading overdue books...</p>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!isLoadingOverdue()">
+    <div *ngIf="overdueUsers().length === 0" class="text-center py-8 text-gray-500">
+      <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
+      <p class="text-lg">No overdue books at the moment!</p>
+    </div>
+
+    <div *ngIf="overdueUsers().length > 0">
+      <p-table
+        [value]="overdueUsers()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[5, 10, 20]"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="border-b border-gray-200 px-4 py-3">User Name</th>
+            <th class="border-b border-gray-200 px-4 py-3">Email</th>
+            <th class="border-b border-gray-200 px-4 py-3">Overdue Books</th>
+            <th class="border-b border-gray-200 px-4 py-3">Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-user>
+          <tr class="hover:bg-gray-50">
+            <td class="border-b border-gray-100 px-4 py-3">{{ user.userName }}</td>
+            <td class="border-b border-gray-100 px-4 py-3">{{ user.email }}</td>
+            <td class="border-b border-gray-100 px-4 py-3">
+              <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full font-semibold">
+                {{ user.overdueCount }} book(s)
+              </span>
+            </td>
+            <td class="border-b border-gray-100 px-4 py-3">
+              <button
+                (click)="onViewUserOverdueDetails(user)"
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+              >
+                <i class="fas fa-eye mr-2"></i> View Details
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button 
+      pButton 
+      label="Close" 
+      icon="pi pi-times"
+      (click)="closeOverdueModals()"
+      class="p-button-text"
+    ></button>
+  </ng-template>
+</p-dialog>
+
+<!-- User Overdue Details Modal -->
+<p-dialog 
+  [(visible)]="showOverdueDetailsModal" 
+  [header]="'Overdue Books - ' + (selectedUserOverdue()?.userName || '')"
+  [modal]="true"
+  [style]="{width: '70vw'}"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="showOverdueDetailsModal.set(false)"
+>
+  <!-- Loading State -->
+  <div *ngIf="isLoadingOverdue()" class="text-center py-8">
+    <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+    <p class="mt-4 text-gray-600">Loading details...</p>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!isLoadingOverdue() && selectedUserOverdue()">
+    <!-- User Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-gray-600">User Name</p>
+          <p class="font-semibold text-gray-900">{{ selectedUserOverdue()?.userName }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Email</p>
+          <p class="font-semibold text-gray-900">{{ selectedUserOverdue()?.email }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overdue Books Table -->
+    <div class="mb-4">
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">Overdue Books ({{ selectedUserOverdue()?.overdueBooks?.length || 0 }})</h3>
+      
+      <p-table
+        [value]="selectedUserOverdue()?.overdueBooks || []"
+        [paginator]="false"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="border-b border-gray-200 px-4 py-3">Book Title</th>
+            <th class="border-b border-gray-200 px-4 py-3">Borrowed Date</th>
+            <th class="border-b border-gray-200 px-4 py-3">Due Date</th>
+            <th class="border-b border-gray-200 px-4 py-3">Days Overdue</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-book>
+          <tr class="hover:bg-gray-50" [ngClass]="{'bg-red-50': book.daysOverdue > 14}">
+            <td class="border-b border-gray-100 px-4 py-3">
+              <span class="font-medium">{{ book.bookTitle }}</span>
+            </td>
+            <td class="border-b border-gray-100 px-4 py-3">{{ book.borrowedDate | date: 'MMM d, y' }}</td>
+            <td class="border-b border-gray-100 px-4 py-3">{{ book.dueDate | date: 'MMM d, y' }}</td>
+            <td class="border-b border-gray-100 px-4 py-3">
+              <span 
+                class="px-3 py-1 rounded-full font-semibold"
+                [ngClass]="{
+                  'bg-yellow-100 text-yellow-800': book.daysOverdue <= 7,
+                  'bg-orange-100 text-orange-800': book.daysOverdue > 7 && book.daysOverdue <= 14,
+                  'bg-red-100 text-red-800': book.daysOverdue > 14
+                }"
+              >
+                {{ book.daysOverdue }} day(s)
+              </span>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <!-- Legend -->
+    <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+      <p class="text-sm font-semibold text-gray-700 mb-2">Color Legend:</p>
+      <div class="flex gap-4 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full">1-7 days</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full">8-14 days</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full">15+ days</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button 
+      pButton 
+      label="Back to List" 
+      icon="pi pi-arrow-left"
+      (click)="showOverdueDetailsModal.set(false)"
+      class="p-button-text"
+    ></button>
   </ng-template>
 </p-dialog>

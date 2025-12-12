@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { BookService, Book, BookDetails, CreateBookRequest, Category } from '../../shared/services/book.service';
+import { BookService, Book, BookDetails, CreateBookRequest, Category, OverdueUser, UserOverdueDetails } from '../../shared/services/book.service';
 import { AuthService } from '../../shared/services/auth.service';
 
 @Component({
@@ -66,6 +66,12 @@ export class Home implements OnInit {
   isTitleChecking = signal(false);
   titleExists = signal(false);
   private titleCheckTimeout: any;
+
+  showOverdueUsersModal = signal(false);
+  showOverdueDetailsModal = signal(false);
+  overdueUsers = signal<OverdueUser[]>([]);
+  selectedUserOverdue = signal<UserOverdueDetails | null>(null);
+  isLoadingOverdue = signal(false);
   
   // Admin check
   isAdmin = computed(() => this.authService.hasRole('admin'));
@@ -385,5 +391,52 @@ export class Home implements OnInit {
         this.isTitleChecking.set(false);
       }
     });
+  }
+
+  // Overdue Books Methods
+  onViewOverdueBooks() {
+    console.log('View overdue books clicked');
+    this.isLoadingOverdue.set(true);
+    this.overdueUsers.set([]);
+    
+    this.bookService.getOverdueUsers().subscribe({
+      next: (users) => {
+        this.overdueUsers.set(users);
+        this.showOverdueUsersModal.set(true);
+        this.isLoadingOverdue.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading overdue users:', error);
+        const errorMsg = error.error?.message || error.message || 'Failed to load overdue books';
+        this.showNotification(errorMsg, 'error');
+        this.isLoadingOverdue.set(false);
+      }
+    });
+  }
+
+  onViewUserOverdueDetails(user: OverdueUser) {
+    console.log('View user overdue details:', user);
+    this.isLoadingOverdue.set(true);
+    this.selectedUserOverdue.set(null);
+    
+    this.bookService.getUserOverdueBooks(user.userId).subscribe({
+      next: (details) => {
+        this.selectedUserOverdue.set(details);
+        this.showOverdueDetailsModal.set(true);
+        this.isLoadingOverdue.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading user overdue details:', error);
+        const errorMsg = error.error?.message || error.message || 'Failed to load user details';
+        this.showNotification(errorMsg, 'error');
+        this.isLoadingOverdue.set(false);
+      }
+    });
+  }
+
+  closeOverdueModals() {
+    this.showOverdueUsersModal.set(false);
+    this.showOverdueDetailsModal.set(false);
+    this.selectedUserOverdue.set(null);
   }
 }
