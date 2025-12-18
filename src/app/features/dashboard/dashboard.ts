@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CardModule } from 'primeng/card';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -30,6 +30,17 @@ export class Dashboard implements OnInit {
   // Modal state
   showBookDetailsModal: boolean = false;
   selectedBook: BorrowedBook | null = null;
+  
+  // Notification modal
+  showNotificationModal = signal(false);
+  notificationMessage = signal('');
+  notificationType = signal<'success' | 'error'>('success');
+  
+  // Confirmation modal
+  showConfirmModal = signal(false);
+  confirmMessage = signal('');
+  confirmAction = signal<'return' | 'extend' | null>(null);
+  pendingBorrowingId = signal<string | null>(null);
 
   get value(): string {
     return this._value;
@@ -122,9 +133,15 @@ export class Dashboard implements OnInit {
   }
 
   returnBook(borrowingId: string) {
-    if (!confirm('Are you sure you want to return this book?')) {
-      return;
-    }
+    this.pendingBorrowingId.set(borrowingId);
+    this.confirmMessage.set('Are you sure you want to return this book?');
+    this.confirmAction.set('return');
+    this.showConfirmModal.set(true);
+  }
+
+  confirmReturnBook() {
+    const borrowingId = this.pendingBorrowingId();
+    if (!borrowingId) return;
 
     this.bookService.returnBook(borrowingId).subscribe({
       next: (response) => {
@@ -151,18 +168,25 @@ export class Dashboard implements OnInit {
         
         // Close modal if open
         this.showBookDetailsModal = false;
+        this.showNotification('Book returned successfully!', 'success');
       },
       error: (error) => {
         console.error('Failed to return book:', error);
-        alert(error?.error?.message || 'Failed to return book. Please try again.');
+        this.showNotification(error?.error?.message || 'Failed to return book. Please try again.', 'error');
       }
     });
   }
 
   extendBook(borrowingId: string) {
-    if (!confirm('Are you sure you want to extend the due date by 7 days?')) {
-      return;
-    }
+    this.pendingBorrowingId.set(borrowingId);
+    this.confirmMessage.set('Are you sure you want to extend the due date by 7 days?');
+    this.confirmAction.set('extend');
+    this.showConfirmModal.set(true);
+  }
+
+  confirmExtendBook() {
+    const borrowingId = this.pendingBorrowingId();
+    if (!borrowingId) return;
 
     this.bookService.extendBook(borrowingId, 7).subscribe({
       next: (response) => {
@@ -179,12 +203,46 @@ export class Dashboard implements OnInit {
         
         // Close modal if open
         this.showBookDetailsModal = false;
-        
+        this.showNotification('Due date extended successfully!', 'success');
       },
       error: (error) => {
         console.error('Failed to extend due date:', error);
-        alert(error?.error?.message || 'Failed to extend due date. Please try again.');
+        this.showNotification(error?.error?.message || 'Failed to extend due date. Please try again.', 'error');
       }
     });
+  }
+
+  // Notification methods
+  showNotification(message: string, type: 'success' | 'error') {
+    this.notificationMessage.set(message);
+    this.notificationType.set(type);
+    this.showNotificationModal.set(true);
+  }
+
+  closeNotification() {
+    this.showNotificationModal.set(false);
+    this.notificationMessage.set('');
+  }
+
+  // Confirmation modal methods
+  onConfirm() {
+    this.showConfirmModal.set(false);
+    const action = this.confirmAction();
+    
+    if (action === 'return') {
+      this.confirmReturnBook();
+    } else if (action === 'extend') {
+      this.confirmExtendBook();
+    }
+    
+    // Reset
+    this.confirmAction.set(null);
+    this.pendingBorrowingId.set(null);
+  }
+
+  onCancelConfirm() {
+    this.showConfirmModal.set(false);
+    this.confirmAction.set(null);
+    this.pendingBorrowingId.set(null);
   }
 }

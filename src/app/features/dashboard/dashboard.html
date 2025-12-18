@@ -182,3 +182,68 @@
     </button>
   </ng-template>
 </p-dialog>
+
+<!-- Confirmation Modal -->
+<p-dialog 
+  [visible]="showConfirmModal()" 
+  (visibleChange)="showConfirmModal.set($event)"
+  header="Confirm Action"
+  [modal]="true"
+  [closable]="false"
+  [style]="{width: '400px'}"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="py-4">
+    <p class="text-gray-700">{{ confirmMessage() }}</p>
+  </div>
+  
+  <ng-template pTemplate="footer">
+    <button 
+      (click)="onCancelConfirm()"
+      class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-medium mr-2">
+      Cancel
+    </button>
+    <button 
+      (click)="onConfirm()"
+      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+      Confirm
+    </button>
+  </ng-template>
+</p-dialog>
+
+<!-- Notification Modal -->
+<p-dialog 
+  [visible]="showNotificationModal()" 
+  (visibleChange)="showNotificationModal.set($event)"
+  [modal]="true"
+  [closable]="false"
+  [style]="{width: '400px'}"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <ng-template pTemplate="header">
+    <div class="flex items-center gap-2">
+      @if (notificationType() === 'success') {
+        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+        <span class="font-semibold">Success</span>
+      } @else {
+        <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+        <span class="font-semibold">Error</span>
+      }
+    </div>
+  </ng-template>
+  
+  <div class="py-4">
+    <p class="text-gray-700">{{ notificationMessage() }}</p>
+  </div>
+  
+  <ng-template pTemplate="footer">
+    <button 
+      (click)="closeNotification()"
+      [ngClass]="notificationType() === 'success' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'"
+      class="text-white px-4 py-2 rounded-lg font-medium">
+      OK
+    </button>
+  </ng-template>
+</p-dialog>
