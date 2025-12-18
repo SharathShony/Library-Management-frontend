@@ -425,12 +425,12 @@
         class="p-button-text"
       ></button>
       <button 
-        pButton 
-        label="Add Book" 
-        icon="pi pi-plus"
-        (click)="confirmAddBook()"
-        class="bg-green-600 hover:bg-green-700"
-      ></button>
+  pButton 
+  label="Add Book" 
+  icon="pi pi-plus"
+  (click)="confirmAddBook()"
+  class="!bg-green-600 hover:!bg-green-700 !text-white !px-4 !py-2"
+></button>
     </div>
   </ng-template>
 </p-dialog>
@@ -477,7 +477,7 @@
         label="Update" 
         icon="pi pi-check"
         (click)="confirmUpdateCopies()"
-        class="bg-blue-600 hover:bg-blue-700"
+        class="!bg-blue-600 hover:!bg-blue-700 !text-white !px-4 !py-2"
       ></button>
     </div>
   </ng-template>
@@ -526,7 +526,7 @@
         label="Delete" 
         icon="pi pi-trash"
         (click)="confirmDeleteBook()"
-        class="bg-red-600 hover:bg-red-700"
+        class="!bg-red-600 hover:!bg-red-700 !text-white !px-4 !py-2"
       ></button>
     </div>
   </ng-template>
