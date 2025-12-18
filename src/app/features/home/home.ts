@@ -145,13 +145,10 @@ export class Home implements OnInit {
   }
 
   onRowAction(book: Book) {
-    console.log('Opening modal for book:', book);
     this.showBookModal.set(true);
     this.isLoadingDetails.set(true);
     this.detailsError.set(null);
     this.selectedBook.set(null);
-
-    console.log('Fetching details for book ID:', book.bookId);
 
     this.bookService.getBookDetails(book.bookId).subscribe({
       next: (details) => {
@@ -221,7 +218,6 @@ export class Home implements OnInit {
 
   // Admin Actions
   onAddBook() {
-    console.log('Add book clicked');
     // Reset form
     this.newBookForm.set({
       title: '',
@@ -256,14 +252,12 @@ export class Home implements OnInit {
   }
 
   onUpdateBookCopies(book: Book) {
-    console.log('Update book copies clicked for:', book);
     this.selectedBookForAdmin.set(book);
     this.newBookCopies.set(0);
     this.showUpdateCopiesModal.set(true);
   }
 
   onDeleteBook(book: Book) {
-    console.log('Delete book clicked for:', book);
     this.selectedBookForAdmin.set(book);
     this.showDeleteBookModal.set(true);
   }
@@ -395,7 +389,6 @@ export class Home implements OnInit {
 
   // Overdue Books Methods
   onViewOverdueBooks() {
-    console.log('View overdue books clicked');
     this.isLoadingOverdue.set(true);
     this.overdueUsers.set([]);
     
@@ -415,7 +408,6 @@ export class Home implements OnInit {
   }
 
   onViewUserOverdueDetails(user: OverdueUser) {
-    console.log('View user overdue details:', user);
     this.isLoadingOverdue.set(true);
     this.selectedUserOverdue.set(null);
     
