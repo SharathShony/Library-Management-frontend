@@ -18,6 +18,14 @@ export class Signup {
   successMessage = signal('');
   isLoading = signal(false);
 
+  isPasswordValid(password: string): boolean {
+    return password.length >= 8 &&
+           /[A-Z]/.test(password) &&
+           /[a-z]/.test(password) &&
+           /[0-9]/.test(password) &&
+           /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  }
+
   onSubmit(event: Event, username: string, email: string, password: string, confirmPassword: string) {
     event.preventDefault();
     
@@ -36,8 +44,8 @@ export class Signup {
       return;
     }
     
-    if (password.length < 6) {
-      this.errorMessage.set('Password must be at least 6 characters long');
+    if (!this.isPasswordValid(password)) {
+      this.errorMessage.set('Password does not meet all requirements');
       return;
     }
     
