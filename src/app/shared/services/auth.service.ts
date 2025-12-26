@@ -84,7 +84,6 @@ export class AuthService {
     return new Observable(observer => {
       this.getCurrentUserFromBackend().subscribe({
         next: (backendUser) => {
-          console.log('Backend user data:', backendUser);
           const updatedUser = {
             id: backendUser.userId,
             email: backendUser.email,
@@ -94,7 +93,6 @@ export class AuthService {
           };
           this.userSignal.set(updatedUser);
           localStorage.setItem('userData', JSON.stringify(updatedUser));
-          console.log('Updated user data with role:', updatedUser.role);
           observer.next();
           observer.complete();
         },
@@ -119,9 +117,6 @@ export class AuthService {
           role: response.role
         };
         
-        console.log('Login response - User role:', response.role);
-        console.log('Login response - Full user object:', user);
-        
         // Ensure token is present
         if (!response.token) {
           console.error('No token received from backend!');
@@ -130,20 +125,9 @@ export class AuthService {
         
         const token = response.token;
         
-        // Decode and log token claims
-        try {
-          const decoded: any = this.decodeToken(token);
-          console.log('Decoded JWT token:', decoded);
-          console.log('Role claim in JWT:', decoded?.role || decoded?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']);
-        } catch (e) {
-          console.error('Failed to decode token:', e);
-        }
-        
         this.storeAuthData(token, user);
         this.isAuthenticatedSignal.set(true);
         this.userSignal.set(user);
-        
-        console.log('Stored user data:', localStorage.getItem('userData'));
       })
     );
   }
@@ -217,11 +201,8 @@ export class AuthService {
 
   hasRole(role: string): boolean {
     const user = this.userSignal();
-    console.log('Checking role:', role, 'User:', user, 'User role:', user?.role);
     if (!user?.role) return false;
     // Case-insensitive comparison
-    const hasRole = user.role.toLowerCase() === role.toLowerCase();
-    console.log('Has role result:', hasRole);
-    return hasRole;
+    return user.role.toLowerCase() === role.toLowerCase();
   }
 }
