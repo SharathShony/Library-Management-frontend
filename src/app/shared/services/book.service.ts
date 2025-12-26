@@ -63,11 +63,71 @@ export interface BorrowingHistory {
   summary?: string;
 }
 
+export interface CreateBookRequest {
+  title: string;
+  subtitle?: string | null;
+  isbn?: string | null;
+  summary?: string | null;
+  publisher?: string | null;
+  publicationDate?: string | null;
+  totalCopies: number;
+  authors: string[];
+  categories: string[];
+}
+
+export interface CreateBookResponse {
+  bookId: string;
+  message: string;
+}
+
+export interface UpdateBookCopiesRequest {
+  totalCopies: number;
+}
+
+export interface UpdateBookCopiesResponse {
+  totalCopies: number;
+  availableCopies: number;
+  message: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+}
+export interface CheckBookTitleResponse{
+  exists: boolean;
+  message?: string;
+}
+
+export interface OverdueUser {
+  userId: string;
+  userName: string;
+  email: string;
+  overdueCount: number;
+}
+
+export interface OverdueBookDetail {
+  borrowingId: string;
+  bookId: string;
+  bookTitle: string;
+  borrowedDate: string;
+  dueDate: string;
+  daysOverdue: number;
+}
+
+export interface UserOverdueDetails {
+  userId: string;
+  userName: string;
+  email: string;
+  overdueBooks: OverdueBookDetail[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class BookService {
-  private apiUrl = 'https://localhost:7159/api/Books';
+  private apiUrl = 'http://localhost:5164/api/Books';
+  private categoriesApiUrl = 'http://localhost:5164/api/Categories';
 
   constructor(private http: HttpClient) {}
 
@@ -87,28 +147,28 @@ export class BookService {
   }
   getCurrentlyBorrowedCount(userId: string) {
   return this.http.get<{ count: number }>(
-    `https://localhost:7159/api/Borrowings/currently-borrowed/count?userId=${userId}`
+    `http://localhost:5164/api/Borrowings/currently-borrowed/count?userId=${userId}`
   );
 }
 getReturnedBooksCount(userId: string) {
   return this.http.get<{ count: number }>(
-    `https://localhost:7159/api/Borrowings/returned/count?userId=${userId}`
+    `http://localhost:5164/api/Borrowings/returned/count?userId=${userId}`
   );
 }
 getOverdueBooksCount(userId: string) {
   return this.http.get<{ count: number }>(
-    `https://localhost:7159/api/Borrowings/overdue/count?userId=${userId}`
+    `http://localhost:5164/api/Borrowings/overdue/count?userId=${userId}`
   );
 }
 getCurrentlyBorrowedBooks(userId: string): Observable<BorrowedBook[]> {
   return this.http.get<BorrowedBook[]>(
-    `https://localhost:7159/api/Borrowings/currently-borrowed?userId=${userId}`
+    `http://localhost:5164/api/Borrowings/currently-borrowed?userId=${userId}`
   );
 }
 
 getBorrowingHistory(userId: string): Observable<BorrowingHistory[]> {
   return this.http.get<BorrowingHistory[]>(
-    `https://localhost:7159/api/Borrowings/history?userId=${userId}`
+    `http://localhost:5164/api/Borrowings/history?userId=${userId}`
   );
 }
 returnBook(borrowingId: string) {
@@ -119,7 +179,7 @@ returnBook(borrowingId: string) {
     availableCopies: number;
     message: string;
   }>(
-    `https://localhost:7159/api/Borrowings/${borrowingId}/return`,
+    `http://localhost:5164/api/Borrowings/${borrowingId}/return`,
     {}
   );
 }
@@ -131,8 +191,42 @@ extendBook(borrowingId: string, extensionDays: number = 7) {
     extensionDays: number;
     message: string;
   }>(
-    `https://localhost:7159/api/Borrowings/${borrowingId}/extend?extensionDays=${extensionDays}`,
+    `http://localhost:5164/api/Borrowings/${borrowingId}/extend?extensionDays=${extensionDays}`,
     {}
   );
+}
+
+// Admin endpoints
+createBook(request: CreateBookRequest): Observable<CreateBookResponse> {
+  return this.http.post<CreateBookResponse>(`${this.apiUrl}`, request);
+}
+
+updateBookCopies(bookId: string, totalCopies: number): Observable<UpdateBookCopiesResponse> {
+  return this.http.put<UpdateBookCopiesResponse>(
+    `${this.apiUrl}/${bookId}/copies`, 
+    { totalCopies }
+  );
+}
+
+deleteBook(bookId: string): Observable<{ message: string }> {
+  return this.http.delete<{ message: string }>(`${this.apiUrl}/${bookId}`);
+}
+
+// Categories endpoint
+getCategories(): Observable<Category[]> {
+  return this.http.get<Category[]>(this.categoriesApiUrl);
+}
+checkBookTitleExists(title: string): Observable<CheckBookTitleResponse> {
+  return this.http.get<CheckBookTitleResponse>(`${this.apiUrl}/check-title?title=${encodeURIComponent(title)}`);
+}
+
+// Admin: Get users with overdue books
+getOverdueUsers(): Observable<OverdueUser[]> {
+  return this.http.get<OverdueUser[]>('http://localhost:5164/api/Admin/overdue-users');
+}
+
+// Admin: Get overdue books for a specific user
+getUserOverdueBooks(userId: string): Observable<UserOverdueDetails> {
+  return this.http.get<UserOverdueDetails>(`http://localhost:5164/api/Admin/overdue-books/${userId}`);
 }
 }

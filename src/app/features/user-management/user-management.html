@@ -1,0 +1,200 @@
+<div class="user-management-container">
+  <div class="header-section">
+    <h1>User Management</h1>
+    <p class="subtitle">Manage and monitor all registered users</p>
+  </div>
+
+  <!-- Search and Actions -->
+  <div class="toolbar">
+    <div class="search-box">
+      <i class="pi pi-search"></i>
+      <input 
+        type="text" 
+        pInputText 
+        placeholder="Search users by name, email, or role..."
+        (input)="onSearchInput($event)"
+        [value]="searchTerm()"
+      />
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (errorMessage()) {
+    <div class="error-banner">
+      <i class="pi pi-exclamation-triangle"></i>
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <!-- Users Table -->
+  <p-table 
+    [value]="filteredUsers()" 
+    [loading]="isLoading()"
+    [paginator]="true"
+    [rows]="10"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} users"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    styleClass="p-datatable-gridlines"
+    [tableStyle]="{ 'min-width': '60rem' }"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Joined Date</th>
+        <th>Books Borrowed</th>
+        <th>Actions</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-user>
+      <tr>
+        <td>
+          <div class="user-info">
+            <i class="pi pi-user user-avatar"></i>
+            <span class="username">{{ user.username }}</span>
+          </div>
+        </td>
+        <td>{{ user.email }}</td>
+        <td>
+          <p-tag 
+            [value]="user.role || 'User'" 
+            [severity]="user.role === 'admin' ? 'danger' : 'info'"
+          ></p-tag>
+        </td>
+        <td>{{ formatDate(user.createdAt) }}</td>
+        <td class="text-center">
+          <span class="books-count">{{ user.currentBorrowedCount || 0 }}</span>
+        </td>
+        <td>
+          <p-button 
+            icon="pi pi-eye" 
+            label="View Details"
+            severity="info"
+            size="small"
+            (onClick)="onUserClick(user)"
+            pTooltip="View borrowed books"
+            tooltipPosition="top"
+          ></p-button>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="6" class="text-center">
+          @if (searchTerm()) {
+            <p>No users found matching "{{ searchTerm() }}"</p>
+          } @else {
+            <p>No users registered yet.</p>
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<!-- User Details Modal -->
+<p-dialog 
+  [(visible)]="showUserDetailsModal" 
+  [header]="'User Details: ' + (selectedUser()?.username || '')"
+  [modal]="true"
+  [style]="{ width: '70vw', maxWidth: '900px' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="closeUserDetailsModal()"
+>
+  @if (selectedUser()) {
+    <div class="user-details-content">
+      <!-- User Info Section -->
+      <div class="user-info-section">
+        <h3>User Information</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Username:</label>
+            <span>{{ selectedUser()!.username }}</span>
+          </div>
+          <div class="info-item">
+            <label>Email:</label>
+            <span>{{ selectedUser()!.email }}</span>
+          </div>
+          <div class="info-item">
+            <label>Role:</label>
+            <p-tag 
+              [value]="selectedUser()!.role || 'User'" 
+              [severity]="selectedUser()!.role === 'Admin' ? 'danger' : 'info'"
+            ></p-tag>
+          </div>
+          <div class="info-item">
+            <label>Member Since:</label>
+            <span>{{ formatDate(selectedUser()!.createdAt) }}</span>
+          </div>
+          <div class="info-item">
+            <label>Currently Borrowed:</label>
+            <span class="highlight">{{ selectedUser()!.currentBorrowedCount || 0 }} books</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Borrowed Books Section -->
+      <div class="borrowed-books-section">
+        <h3>Borrowed Books History</h3>
+        
+        @if (isLoadingBooks()) {
+          <div class="loading-state">
+            <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+            <p>Loading borrowed books...</p>
+          </div>
+        } @else if (booksErrorMessage()) {
+          <div class="error-state">
+            <i class="pi pi-exclamation-circle"></i>
+            <p>{{ booksErrorMessage() }}</p>
+          </div>
+        } @else if (userBorrowedBooks().length === 0) {
+          <div class="empty-state">
+            <i class="pi pi-book"></i>
+            <p>This user hasn't borrowed any books yet.</p>
+          </div>
+        } @else {
+          <p-table 
+            [value]="userBorrowedBooks()"
+            [paginator]="true"
+            [rows]="5"
+            styleClass="p-datatable-sm"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Book Title</th>
+                <th>Borrowed Date</th>
+                <th>Due Date</th>
+                <th>Returned Date</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-book>
+              <tr>
+                <td>
+                  <div class="book-title">
+                    <i class="pi pi-book book-icon"></i>
+                    <span>{{ book.bookTitle }}</span>
+                  </div>
+                </td>
+                <td>{{ formatDate(book.borrowedDate) }}</td>
+                <td>
+                  {{ formatDate(book.dueDate) }}
+                  @if (!book.returnedDate && getDaysOverdue(book.dueDate) > 0) {
+                    <p-tag 
+                      [value]="getDaysOverdue(book.dueDate) + ' days overdue'" 
+                      severity="danger"
+                      styleClass="ml-2"
+                    ></p-tag>
+                  }
+                </td>
+                <td>{{ formatDate(book.returnedDate) }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </div>
+    </div>
+  }
+</p-dialog>

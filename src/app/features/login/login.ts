@@ -34,7 +34,6 @@ export class Login {
         this.router.navigate(['/home']);
       },
       error: (error) => {
-        console.error('Login failed:', error);
         this.isLoading.set(false);
         this.errorMessage.set(error.error?.message || 'Login failed. Please try again.');
       }

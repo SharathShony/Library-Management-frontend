@@ -1,0 +1,79 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50">
+  
+  <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-lg lg:w-1/2">
+    <h2 class="text-3xl font-semibold text-center mb-6">Create Account</h2>
+    <form class="space-y-4" (submit)="onSubmit($event, username.value, email.value, password.value, confirmPassword.value)">
+      
+      <!-- Error message -->
+      <div *ngIf="errorMessage()" class="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+        {{ errorMessage() }}
+      </div>
+
+      <!-- Success message -->
+      <div *ngIf="successMessage()" class="p-3 bg-green-100 text-green-700 rounded-md text-sm">
+        {{ successMessage() }}
+      </div>
+
+      <!-- Username -->
+      <div>
+        <label for="username" class="block text-sm font-medium mb-1">Username</label>
+        <input #username 
+               type="text"
+               id="username"
+               placeholder="Enter your username"
+               required
+               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label for="email" class="block text-sm font-medium mb-1">Email</label>
+        <input #email 
+               type="email"
+               id="email"
+               placeholder="you@example.com"
+               required
+               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label for="password" class="block text-sm font-medium mb-1">Password</label>
+        <input #password 
+               type="password"
+               id="password"
+               placeholder="Enter your password"
+               required
+               autocomplete="new-password"
+               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+          <i class="fas fa-info-circle"></i>
+          Must have: 8+ chars, uppercase, lowercase, number, special character
+        </p>
+      </div>
+
+      <!-- Confirm Password -->
+      <div>
+        <label for="confirmPassword" class="block text-sm font-medium mb-1">Confirm Password</label>
+        <input #confirmPassword 
+               type="password"
+               id="confirmPassword"
+               placeholder="Confirm your password"
+               required
+               autocomplete="new-password"
+               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <!-- Submit -->
+      <button type="submit"
+              [disabled]="isLoading()"
+              class="w-full py-2 bg-[#021359] text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+        {{ isLoading() ? 'Creating Account...' : 'Sign Up' }}
+      </button>
+    </form>
+    <p class="mt-6 text-center text-sm text-gray-600">
+      Already have an account?
+      <a routerLink="/login" class="text-blue-600 hover:underline">Sign in here</a>
+    </p>
+  </div>
+</div>
