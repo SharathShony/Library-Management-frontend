@@ -15,6 +15,13 @@
            class="nav-btn">
           Catalog
         </a>
+        <a *ngIf="userRole()?.toLowerCase() === 'admin'"
+           routerLink="/user-management" 
+           routerLinkActive="active-link"
+           [routerLinkActiveOptions]="{exact: true}"
+           class="nav-btn">
+          Users
+        </a>
         <a routerLink="/dashboard" 
            routerLinkActive="active-link"
            [routerLinkActiveOptions]="{exact: false}"
