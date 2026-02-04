@@ -77,6 +77,12 @@
 <div *ngIf="!isLoading() && isAdmin()" class="max-w-7xl mx-auto px-4 mb-4">
   <div class="flex justify-end gap-3">
     <button 
+      (click)="onViewPendingRequests()"
+      class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 font-medium"
+    >
+      Pending Requests
+    </button>
+    <button 
       (click)="onViewOverdueBooks()"
       class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 font-medium"
     >
@@ -270,11 +276,49 @@
         pButton 
         label="Borrow Book" 
         icon="pi pi-book"
-        (click)="onBorrowBook()"
+        (click)="onBorrowBookClick()"
         [disabled]="isBorrowing()"
         [loading]="isBorrowing()"
         class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md transition-all duration-200"
       ></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Borrow Book Confirmation Modal -->
+<p-dialog 
+  [visible]="showBorrowConfirmModal()" 
+  (visibleChange)="showBorrowConfirmModal.set($event)"
+  header="Confirm Borrow Book"
+  [modal]="true"
+  [closable]="false"
+  [style]="{width: '450px'}"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="py-4">
+    <div class="flex items-start gap-3">
+      <i class="fas fa-question-circle text-blue-500 text-2xl mt-1"></i>
+      <div>
+        <p class="text-gray-800 font-medium mb-2">Are you sure you want to borrow this book?</p>
+        <p class="text-gray-600 text-sm">{{ selectedBook()?.title }}</p>
+        <p class="text-gray-500 text-xs mt-2">The book will be added to your borrowed books list.</p>
+      </div>
+    </div>
+  </div>
+  
+  <ng-template pTemplate="footer">
+    <div class="flex gap-2">
+      <button 
+        (click)="closeBorrowConfirmModal()"
+        class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-medium">
+        Close
+      </button>
+      <button 
+        (click)="confirmBorrowBook()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+        Confirm Borrow
+      </button>
     </div>
   </ng-template>
 </p-dialog>
@@ -738,5 +782,132 @@
       (click)="showOverdueDetailsModal.set(false)"
       class="p-button-text"
     ></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Pending Borrowing Requests Modal -->
+<p-dialog 
+  [visible]="showPendingRequestsModal()" 
+  (visibleChange)="showPendingRequestsModal.set($event)"
+  header="Pending Borrowing Requests"
+  [modal]="true"
+  [style]="{width: '80vw'}"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="closePendingRequestsModal()"
+>
+  <!-- Loading State -->
+  <div *ngIf="isLoadingRequests()" class="text-center py-8">
+    <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+    <p class="mt-4 text-gray-600">Loading pending requests...</p>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!isLoadingRequests()">
+    <div *ngIf="pendingRequests().length === 0" class="text-center py-8 text-gray-500">
+      <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
+      <p class="text-lg">No pending requests at the moment!</p>
+    </div>
+
+    <div *ngIf="pendingRequests().length > 0">
+      <p-table
+        [value]="pendingRequests()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[5, 10, 20]"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="border-b border-gray-200 px-4 py-3">User Name</th>
+            <th class="border-b border-gray-200 px-4 py-3">Email</th>
+            <th class="border-b border-gray-200 px-4 py-3">Book Title</th>
+            <th class="border-b border-gray-200 px-4 py-3">Requested On</th>
+            <th class="border-b border-gray-200 px-4 py-3">Due Date</th>
+            <th class="border-b border-gray-200 px-4 py-3">Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-request>
+          <tr class="hover:bg-gray-50">
+            <td class="border-b border-gray-100 px-4 py-3">{{ request.userName }}</td>
+            <td class="border-b border-gray-100 px-4 py-3">{{ request.userEmail }}</td>
+            <td class="border-b border-gray-100 px-4 py-3">
+              <span class="font-medium">{{ request.bookTitle }}</span>
+            </td>
+            <td class="border-b border-gray-100 px-4 py-3">{{ request.requestedDate | date: 'MMM d, y h:mm a' }}</td>
+            <td class="border-b border-gray-100 px-4 py-3">{{ request.dueDate | date: 'MMM d, y' }}</td>
+            <td class="border-b border-gray-100 px-4 py-3">
+              <div class="flex gap-2">
+                <button
+                  (click)="onApproveRequest(request.borrowingId)"
+                  class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium"
+                  title="Approve request"
+                >
+                  <i class="fas fa-check mr-1"></i> Approve
+                </button>
+                <button
+                  (click)="onRejectRequestClick(request.borrowingId)"
+                  class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium"
+                  title="Reject request"
+                >
+                  <i class="fas fa-times mr-1"></i> Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button 
+      pButton 
+      label="Close" 
+      icon="pi pi-times"
+      (click)="closePendingRequestsModal()"
+      class="p-button-text"
+    ></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Reject Request Modal -->
+<p-dialog 
+  [visible]="showRejectModal()" 
+  (visibleChange)="showRejectModal.set($event)"
+  header="Reject Borrowing Request"
+  [modal]="true"
+  [closable]="false"
+  [style]="{width: '500px'}"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="py-4">
+    <label for="rejectionReason" class="block text-sm font-medium text-gray-700 mb-2">
+      Rejection Reason <span class="text-red-500">*</span>
+    </label>
+    <textarea 
+      id="rejectionReason"
+      [value]="rejectionReason()"
+      (input)="rejectionReason.set($any($event.target).value)"
+      rows="4"
+      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      placeholder="Enter the reason for rejecting this request..."
+    ></textarea>
+    <p class="text-xs text-gray-500 mt-1">This will be shown to the user.</p>
+  </div>
+  
+  <ng-template pTemplate="footer">
+    <button 
+      (click)="closeRejectModal()"
+      class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-medium mr-2">
+      Cancel
+    </button>
+    <button 
+      (click)="confirmRejectRequest()"
+      [disabled]="!rejectionReason().trim()"
+      class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+      Reject Request
+    </button>
   </ng-template>
 </p-dialog>

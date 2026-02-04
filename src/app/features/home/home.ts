@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { BookService, Book, BookDetails, CreateBookRequest, Category, OverdueUser, UserOverdueDetails } from '../../shared/services/book.service';
+import { BookService, Book, BookDetails, CreateBookRequest, Category, OverdueUser, UserOverdueDetails, PendingBorrowRequest } from '../../shared/services/book.service';
 import { AuthService } from '../../shared/services/auth.service';
 
 @Component({
@@ -30,6 +30,7 @@ export class Home implements OnInit {
   isLoadingDetails = signal(false);
   detailsError = signal<string | null>(null);
   isBorrowing = signal(false);
+  showBorrowConfirmModal = signal(false);
   
   // Admin modal states
   showAddBookModal = signal(false);
@@ -72,6 +73,14 @@ export class Home implements OnInit {
   overdueUsers = signal<OverdueUser[]>([]);
   selectedUserOverdue = signal<UserOverdueDetails | null>(null);
   isLoadingOverdue = signal(false);
+
+  // Pending requests modal
+  showPendingRequestsModal = signal(false);
+  pendingRequests = signal<PendingBorrowRequest[]>([]);
+  isLoadingRequests = signal(false);
+  showRejectModal = signal(false);
+  rejectionReason = signal('');
+  pendingBorrowingId = signal<string | null>(null);
   
   // Admin check
   isAdmin = computed(() => this.authService.hasRole('admin'));
@@ -170,18 +179,30 @@ export class Home implements OnInit {
     this.isLoadingDetails.set(false);
   }
 
-  onBorrowBook() {
+  onBorrowBookClick() {
     const book = this.selectedBook();
     if (!book) return;
 
-    // Get userId from sessionStorage (set during login)
+    // Get userId from sessionStorage
     const userId = sessionStorage.getItem('userId');
     
     if (!userId) {
       this.detailsError.set('Please log in to borrow books.');
       return;
     }
+
+    // Show confirmation modal
+    this.showBorrowConfirmModal.set(true);
+  }
+
+  confirmBorrowBook() {
+    const book = this.selectedBook();
+    if (!book) return;
+
+    const userId = sessionStorage.getItem('userId');
+    if (!userId) return;
     
+    this.showBorrowConfirmModal.set(false);
     this.isBorrowing.set(true);
     this.detailsError.set(null);
 
@@ -214,6 +235,10 @@ export class Home implements OnInit {
         this.isBorrowing.set(false);
       }
     });
+  }
+
+  closeBorrowConfirmModal() {
+    this.showBorrowConfirmModal.set(false);
   }
 
   // Admin Actions
@@ -430,5 +455,84 @@ export class Home implements OnInit {
     this.showOverdueUsersModal.set(false);
     this.showOverdueDetailsModal.set(false);
     this.selectedUserOverdue.set(null);
+  }
+
+  // Pending Requests Methods
+  onViewPendingRequests() {
+    console.log('View pending requests clicked');
+    this.isLoadingRequests.set(true);
+    this.pendingRequests.set([]);
+    
+    this.bookService.getPendingRequests().subscribe({
+      next: (requests) => {
+        this.pendingRequests.set(requests);
+        this.showPendingRequestsModal.set(true);
+        this.isLoadingRequests.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading pending requests:', error);
+        const errorMsg = error.error?.message || error.message || 'Failed to load pending requests';
+        this.showNotification(errorMsg, 'error');
+        this.isLoadingRequests.set(false);
+      }
+    });
+  }
+
+  onApproveRequest(borrowingId: string) {
+    console.log('Approve request:', borrowingId);
+    this.bookService.approveRequest(borrowingId).subscribe({
+      next: (response) => {
+        this.showNotification(response.message || 'Request approved successfully!', 'success');
+        this.onViewPendingRequests(); // Refresh list
+        this.loadBooks(); // Refresh book catalog
+      },
+      error: (error) => {
+        console.error('Error approving request:', error);
+        const errorMsg = error.error?.message || error.message || 'Failed to approve request';
+        this.showNotification(errorMsg, 'error');
+      }
+    });
+  }
+
+  onRejectRequestClick(borrowingId: string) {
+    this.pendingBorrowingId.set(borrowingId);
+    this.rejectionReason.set('');
+    this.showRejectModal.set(true);
+  }
+
+  confirmRejectRequest() {
+    const borrowingId = this.pendingBorrowingId();
+    const reason = this.rejectionReason().trim();
+    
+    if (!borrowingId) return;
+    if (!reason) {
+      this.showNotification('Please provide a reason for rejection', 'error');
+      return;
+    }
+    
+    this.bookService.rejectRequest(borrowingId, reason).subscribe({
+      next: (response) => {
+        this.showNotification(response.message || 'Request rejected successfully', 'success');
+        this.showRejectModal.set(false);
+        this.pendingBorrowingId.set(null);
+        this.rejectionReason.set('');
+        this.onViewPendingRequests(); // Refresh list
+      },
+      error: (error) => {
+        console.error('Error rejecting request:', error);
+        const errorMsg = error.error?.message || error.message || 'Failed to reject request';
+        this.showNotification(errorMsg, 'error');
+      }
+    });
+  }
+
+  closeRejectModal() {
+    this.showRejectModal.set(false);
+    this.pendingBorrowingId.set(null);
+    this.rejectionReason.set('');
+  }
+
+  closePendingRequestsModal() {
+    this.showPendingRequestsModal.set(false);
   }
 }

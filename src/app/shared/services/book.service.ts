@@ -122,6 +122,16 @@ export interface UserOverdueDetails {
   overdueBooks: OverdueBookDetail[];
 }
 
+export interface PendingBorrowRequest {
+  borrowingId: string;
+  userName: string;
+  userEmail: string;
+  bookTitle: string;
+  bookId: string;
+  requestedDate: string;
+  dueDate: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -228,5 +238,26 @@ getOverdueUsers(): Observable<OverdueUser[]> {
 // Admin: Get overdue books for a specific user
 getUserOverdueBooks(userId: string): Observable<UserOverdueDetails> {
   return this.http.get<UserOverdueDetails>(`http://localhost:5164/api/Admin/overdue-books/${userId}`);
+}
+
+// Admin: Get pending borrowing requests
+getPendingRequests(): Observable<PendingBorrowRequest[]> {
+  return this.http.get<PendingBorrowRequest[]>('http://localhost:5164/api/Admin/borrowing-requests/pending');
+}
+
+// Admin: Approve borrowing request
+approveRequest(borrowingId: string): Observable<{ message: string; borrowingId: string }> {
+  return this.http.post<{ message: string; borrowingId: string }>(
+    `http://localhost:5164/api/Admin/borrowing-requests/${borrowingId}/approve`,
+    {}
+  );
+}
+
+// Admin: Reject borrowing request
+rejectRequest(borrowingId: string, reason: string): Observable<{ message: string }> {
+  return this.http.post<{ message: string }>(
+    `http://localhost:5164/api/Admin/borrowing-requests/${borrowingId}/reject`,
+    { reason }
+  );
 }
 }
